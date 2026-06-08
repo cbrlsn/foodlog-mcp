@@ -22,7 +22,7 @@ const app = express();
 // ── CORS ──────────────────────────────────────────────────────────
 // Only allow requests from our Netlify app
 const ALLOWED_ORIGINS = [
-  'https://splendorous-liger-d5de57.netlify.app',
+  'https://clemsfoodlog.netlify.app',
   'http://localhost:3000',
   'http://localhost:8080',
 ];
