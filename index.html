@@ -268,6 +268,7 @@
 <div id="setup-screen" style="display:none">
   <div class="setup-card">
     <h1>foodlog</h1>
+    <div id="auth-version" style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin:-4px 0 8px;"></div>
     <p id="auth-subtitle">Sign in to your account.</p>
     <div id="auth-error" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:16px;"></div>
     <label>Email</label>
@@ -287,7 +288,7 @@
 
 <div id="app" style="display:none">
   <div id="sidebar">
-    <div class="logo">foodlog</div>
+    <div class="logo">foodlog<div id="app-version" style="font-size:9px;color:var(--text3);font-weight:300;letter-spacing:0;margin-top:2px;"></div></div>
     <div class="nav-section">log</div>
     <div class="nav-item active" onclick="showPage('log')" id="nav-log"><span class="nav-icon">✎</span> chat</div>
     <div class="nav-section">view</div>
@@ -448,6 +449,10 @@
           <div><div class="setting-label">Signed in as</div><div class="setting-sub" id="settings-email">—</div></div>
           <button class="btn-danger" onclick="signOut()">sign out</button>
         </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Version</div><div class="setting-sub">if this doesn't match the latest deploy, hard-refresh (Cmd+Shift+R)</div></div>
+          <span id="settings-version" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);"></span>
+        </div>
       </div>
       <div class="settings-section">
         <h3>data</h3>
@@ -533,6 +538,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
+var APP_BUILD = 'v13.1 · 2026-06-09 23:55';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -847,6 +853,8 @@ function togglePanel(){
 
 // ── Init ──────────────────────────────────────────────────────────
 function init(){
+  ['app-version','auth-version','settings-version'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=APP_BUILD;});
+  console.log('foodlog build:',APP_BUILD);
   initSupabase();
   supabaseClient.auth.getSession().then(function(result){
     var session=result.data&&result.data.session;
