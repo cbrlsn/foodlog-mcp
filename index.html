@@ -211,20 +211,15 @@
 <div id="setup-screen" style="display:none">
   <div class="setup-card">
     <h1>foodlog</h1>
-    <p id="auth-subtitle">Sign in to your account.</p>
-    <div id="auth-error" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:16px;"></div>
-    <label>Email</label>
-    <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email"/>
-    <label>Password</label>
-    <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"/>
-    <div id="auth-name-row" style="display:none">
-      <label>Your name</label>
-      <input type="text" id="auth-name" placeholder="e.g. Clem" autocomplete="off"/>
-    </div>
-    <button id="auth-btn" onclick="authSubmit()">sign in →</button>
-    <p class="setup-note" style="margin-top:16px;cursor:pointer" onclick="toggleAuthMode()">
-      <span id="auth-toggle-text">No account? <u>Sign up</u></span>
-    </p>
+    <p>Enter your keys to get started.</p>
+    <label>Anthropic API key</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off"/>
+    <label>Supabase URL</label>
+    <input type="text" id="sb-url-input" placeholder="https://xxxx.supabase.co" autocomplete="off"/>
+    <label>Supabase anon key</label>
+    <input type="password" id="sb-key-input" placeholder="eyJ..." autocomplete="off"/>
+    <button onclick="saveSetup()">get started →</button>
+    <p class="setup-note">keys in localStorage · data in Supabase</p>
   </div>
 </div>
 
@@ -244,7 +239,7 @@
       <div class="sync-indicator" id="sync-status">● connected</div>
       <div class="profile-block">
         <div class="name">Clem</div>
-        <div class="stats"><span id="sidebar-age">25</span>y · <span id="sidebar-weight">70</span>kg · ~<span id="sidebar-kcal">2000</span> kcal/day</div>
+        <div class="stats">23y · <span id="sidebar-weight">64</span>kg · ~2350 kcal/day</div>
         <div class="weight-row">
           <input type="number" id="weight-quick" value="64" min="40" max="150" step="0.5"/>
           <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">kg</span>
@@ -267,19 +262,12 @@
           <div class="panel-arrow">▼</div>
         </div>
         <div class="nutrient-bars" id="nutrient-bars"></div>
-      <div id="water-bar-row" style="padding:6px 16px 10px;border-top:1px solid var(--border2);margin-top:2px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">water</span>
-          <span id="water-summary" style="font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;">0 / 0 ml</span>
-        </div>
-        <div id="water-bottles" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-      </div>
       </div>
       <!-- Chat -->
       <div id="chat-messages">
         <div class="msg msg-claude">
           <div class="msg-avatar">ai</div>
-          <div class="msg-body"><div class="msg-text" id="greeting-msg">Hey! Log food, activity, or symptoms — all in one place. I'll figure out what to track. You can also mention when something happened ("had this at 8am") and I'll set the time correctly.</div></div>
+          <div class="msg-body"><div class="msg-text">Hey Clem! Log food, activity, or symptoms — all in one place. I'll figure out what to track. You can also mention when something happened ("had this at 8am") and I'll set the time correctly.</div></div>
         </div>
       </div>
       <div id="chat-input-area">
@@ -336,60 +324,43 @@
       <div class="settings-section">
         <h3>profile</h3>
         <div class="setting-row">
-          <div><div class="setting-label">Name</div></div>
-          <input class="setting-input" type="text" id="settings-name" placeholder="Your name" style="width:120px;"/>
-        </div>
-        <div class="setting-row">
-          <div><div class="setting-label">Birthday</div></div>
-          <input class="setting-input" type="date" id="settings-birthday"/>
-        </div>
-        <div class="setting-row">
-          <div><div class="setting-label">Sex</div></div>
-          <select id="settings-sex" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-family:'DM Mono',monospace;font-size:11px;outline:none;">
-            <option value="male">male</option>
-            <option value="female">female</option>
-          </select>
-        </div>
-        <div class="setting-row">
           <div><div class="setting-label">Weight</div><div class="setting-sub">used for TDEE</div></div>
           <div style="display:flex;gap:8px;align-items:center">
-            <input class="setting-input" type="number" id="settings-weight" min="30" max="200" step="0.5" style="width:60px;"/>
+            <input class="setting-input" type="number" id="settings-weight" min="40" max="150" step="0.5"/>
             <span style="font-size:11px;color:var(--text3)">kg</span>
+            <button class="btn-save" onclick="saveSettings()">save</button>
           </div>
         </div>
         <div class="setting-row">
-          <div><div class="setting-label">Height</div></div>
+          <div><div class="setting-label">Daily calorie target</div></div>
           <div style="display:flex;gap:8px;align-items:center">
-            <input class="setting-input" type="number" id="settings-height" min="100" max="250" style="width:60px;"/>
-            <span style="font-size:11px;color:var(--text3)">cm</span>
+            <input class="setting-input" type="number" id="settings-calories" min="1200" max="5000" step="50"/>
+            <span style="font-size:11px;color:var(--text3)">kcal</span>
+            <button class="btn-save" onclick="saveSettings()">save</button>
           </div>
         </div>
         <div class="setting-row">
           <div><div class="setting-label">Activity level</div></div>
           <select id="settings-activity" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 10px;font-family:'DM Mono',monospace;font-size:11px;outline:none;">
             <option value="sedentary">sedentary</option>
-            <option value="light">lightly active</option>
+            <option value="light" selected>lightly active</option>
             <option value="moderate">moderately active</option>
             <option value="active">very active</option>
           </select>
         </div>
+      </div>
+      <div class="settings-section">
+        <h3>api keys</h3>
         <div class="setting-row">
-          <div><div class="setting-label">Calorie target</div><div class="setting-sub">auto-calculated or override</div></div>
+          <div><div class="setting-label">Anthropic API key</div></div>
           <div style="display:flex;gap:8px;align-items:center">
-            <input class="setting-input" type="number" id="settings-calories" min="1200" max="5000" step="50" style="width:70px;"/>
-            <span style="font-size:11px;color:var(--text3)">kcal</span>
+            <div class="api-key-display" id="api-key-display">sk-ant-···</div>
+            <button class="btn-save" onclick="changeApiKey()">change</button>
           </div>
         </div>
         <div class="setting-row">
-          <div></div>
-          <button class="btn-save" onclick="saveSettings()">save profile</button>
-        </div>
-      </div>
-      <div class="settings-section">
-        <h3>account</h3>
-        <div class="setting-row">
-          <div><div class="setting-label">Signed in as</div><div class="setting-sub" id="settings-email">—</div></div>
-          <button class="btn-danger" onclick="signOut()">sign out</button>
+          <div><div class="setting-label">Supabase</div><div class="setting-sub" id="sb-status-text">checking...</div></div>
+          <button class="btn-save" onclick="changeSupabaseKeys()">reconfigure</button>
         </div>
       </div>
       <div class="settings-section">
@@ -419,123 +390,11 @@
   </div>
 </div>
 
-<div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 28px;min-width:260px;text-align:center;font-family:'DM Mono',monospace;">
-    <div id="confirm-msg" style="color:var(--text);font-size:13px;margin-bottom:20px;">Are you sure?</div>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button onclick="confirmResolve(false)" style="background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 20px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;">cancel</button>
-      <button onclick="confirmResolve(true)" style="background:var(--red,#ff6b6b);border:none;color:#fff;border-radius:8px;padding:8px 20px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;">delete</button>
-    </div>
-  </div>
-</div>
-<div id="onboarding-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center;">
-  <div class="setup-card" style="max-width:380px;width:100%;">
-    <h1>one more thing</h1>
-    <p style="color:var(--text2);font-size:12px;margin-bottom:20px;">Tell us a bit about yourself so we can calculate your targets.</p>
-    <label>Display name</label>
-    <input type="text" id="ob-name" placeholder="e.g. Clem" autocomplete="off"/>
-    <label>Birthday</label>
-    <input type="date" id="ob-birthday"/>
-    <label>Sex</label>
-    <select id="ob-sex" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;outline:none;margin-bottom:14px;width:100%;">
-      <option value="male">male</option>
-      <option value="female">female</option>
-    </select>
-    <label>Weight</label>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
-      <input type="number" id="ob-weight" placeholder="70" min="30" max="200" step="0.5" style="flex:1;"/>
-      <span style="color:var(--text3);font-size:11px;">kg</span>
-    </div>
-    <label>Height</label>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
-      <input type="number" id="ob-height" placeholder="175" min="100" max="250" style="flex:1;"/>
-      <span style="color:var(--text3);font-size:11px;">cm</span>
-    </div>
-    <label>Activity level</label>
-    <select id="ob-activity" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;outline:none;margin-bottom:20px;width:100%;">
-      <option value="sedentary">sedentary (desk job, little exercise)</option>
-      <option value="light" selected>lightly active (1-3x/week)</option>
-      <option value="moderate">moderately active (3-5x/week)</option>
-      <option value="active">very active (6-7x/week)</option>
-    </select>
-    <button onclick="saveOnboarding()">let's go →</button>
-    <p class="setup-note" id="ob-error" style="color:var(--red,#ff6b6b);display:none;"></p>
-  </div>
-</div>
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Access gate ───────────────────────────────────────────────────
-(function(){
-  var ACCESS_TOKEN = 'clem2024';
-  var params = new URLSearchParams(window.location.search);
-  if(params.get('access') !== ACCESS_TOKEN){
-    document.documentElement.innerHTML = '<html><body style="background:#0f0f0e;color:#5a5854;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-size:13px;">access denied</body></html>';
-    throw new Error('Access denied');
-  }
-})();
-
-// ── Config ────────────────────────────────────────────────────────
-var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
-var ACCESS_TOKEN = 'clem2024';
-var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
-var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsY3lqc2prdmNraHVmdnZkaXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg3NTcsImV4cCI6MjA5NjMxNDc1N30.kiUlVU2VSAMfAwu8r_oKavz5FHWh_A3MKR7u-sVt9Dw';
-
 // ── State ─────────────────────────────────────────────────────────
 var supabaseClient = null;
-var currentUser = null;
-var userProfile = null; // loaded from Supabase profiles table
-var entries = [], activities = [], healthEvents = [];
-var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:70,height:175,age:25,sex:'male',activity:'light',calorieTarget:2000}));
-var isThinking = false, chartInstances = {};
-var panelExpanded = true;
-var authMode = 'signin';
-
-function calcTDEE(profile){
-  var w=profile.weight_kg||70, h=profile.height_cm||175, sex=profile.sex||'male', activity=profile.activity||'light';
-  var age=25;
-  if(profile.birthday){var b=new Date(profile.birthday);age=Math.floor((Date.now()-b)/31557600000);}
-  var bmr=sex==='female'?(10*w+6.25*h-5*age-161):(10*w+6.25*h-5*age+5);
-  var mult={sedentary:1.2,light:1.375,moderate:1.55,active:1.725}[activity]||1.375;
-  return Math.round(bmr*mult);
-}
-function calcWaterTarget(profile, hadActivity){
-  var w = profile && profile.weight_kg ? profile.weight_kg : (userConfig.weight||70);
-  var base = Math.round(w * 35); // 35ml per kg
-  return hadActivity ? base + 500 : base;
-}
-
-function renderWaterBottles(){
-  var now = new Date();
-  var today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-  var totalMl = entries.filter(function(e){ return e.date===today && e.meal==='water'; })
-    .reduce(function(s,e){ return s+(e.calories||0); }, 0);
-  var hadActivity = activities.some(function(a){ return a.date===today; });
-  var target = calcWaterTarget(userProfile, hadActivity);
-  var el = document.getElementById('water-bottles');
-  var summaryEl = document.getElementById('water-summary');
-  if(!el) return;
-  summaryEl.textContent = totalMl + ' / ' + target + ' ml';
-  var numBottles = Math.ceil(target / 500);
-  var html = '';
-  for(var i=0; i<numBottles; i++){
-    var filled = Math.min(Math.max(totalMl - i*500, 0), 500);
-    var pct = Math.round((filled/500)*100);
-    var fillH = Math.round(24*pct/100);
-    var fillY = 3 + (24 - fillH);
-    var fillColor = pct===100 ? 'var(--accent)' : '#64b4ff';
-    var fillRect = pct>0 ? '<rect x="2" y="'+fillY+'" width="14" height="'+fillH+'" rx="2" fill="'+fillColor+'" opacity="0.7"/>' : '';
-    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">'
-      + '<svg width="18" height="30" viewBox="0 0 18 30">'
-      + '<rect x="5" y="0" width="8" height="3" rx="1" fill="rgba(255,255,255,0.2)"/>'
-      + '<rect x="1" y="3" width="16" height="24" rx="3" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
-      + fillRect
-      + '</svg>'
-      + '<span style="font-size:8px;color:var(--text3);font-family:DM Mono,monospace">'+pct+'%</span>'
-      + '</div>';
-  }
-  el.innerHTML = html;
-}
 var entries = [], activities = [], healthEvents = [];
 var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:64,age:23,activity:'light',calorieTarget:2350}));
 var isThinking = false, chartInstances = {};
@@ -553,125 +412,23 @@ var UNITS = {
 };
 var OVER_IS_BAD = {sugar:true, sodium:true, fat:false}; // fat: slightly over ok
 
-// ── Supabase + Auth ───────────────────────────────────────────────
+// ── Supabase ──────────────────────────────────────────────────────
 function initSupabase() {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  return true;
+  var url=localStorage.getItem('fl-sb-url'), key=localStorage.getItem('fl-sb-key');
+  if(url&&key){supabaseClient=supabase.createClient(url,key);return true;}
+  return false;
 }
 function setSyncStatus(s,t){var el=document.getElementById('sync-status');el.className='sync-indicator '+s;el.textContent=t;}
 
-function toggleAuthMode(){
-  authMode = authMode==='signin'?'signup':'signin';
-  document.getElementById('auth-subtitle').textContent = authMode==='signin'?'Sign in to your account.':'Create your account.';
-  document.getElementById('auth-btn').textContent = authMode==='signin'?'sign in →':'sign up →';
-  document.getElementById('auth-toggle-text').innerHTML = authMode==='signin'?'No account? <u>Sign up</u>':'Already have one? <u>Sign in</u>';
-  document.getElementById('auth-name-row').style.display = authMode==='signup'?'block':'none';
-  document.getElementById('auth-error').style.display='none';
-}
-
-async function authSubmit(){
-  var email=document.getElementById('auth-email').value.trim();
-  var password=document.getElementById('auth-password').value;
-  var errEl=document.getElementById('auth-error');
-  errEl.style.display='none';
-  if(!email||!password){errEl.textContent='Please enter email and password.';errEl.style.display='block';return;}
-  document.getElementById('auth-btn').textContent='...';
-  document.getElementById('auth-btn').disabled=true;
-  try {
-    var result;
-    if(authMode==='signup'){
-      var name=document.getElementById('auth-name').value.trim()||email.split('@')[0];
-      result=await supabaseClient.auth.signUp({email,password,options:{data:{display_name:name}}});
-      if(result.error)throw result.error;
-      if(result.data.user&&!result.data.session){
-        errEl.style.background='rgba(200,240,96,0.1)';errEl.style.borderColor='rgba(200,240,96,0.3)';errEl.style.color='var(--accent)';
-        errEl.textContent='Check your email to confirm your account, then sign in.';errEl.style.display='block';
-        document.getElementById('auth-btn').textContent='sign up →';document.getElementById('auth-btn').disabled=false;return;
-      }
-    } else {
-      result=await supabaseClient.auth.signInWithPassword({email,password});
-      if(result.error)throw result.error;
-    }
-    currentUser=result.data.user;
-    onAuthSuccess();
-  } catch(err){
-    errEl.style.background='rgba(255,107,107,0.1)';errEl.style.borderColor='rgba(255,107,107,0.3)';errEl.style.color='var(--red)';
-    errEl.textContent=err.message||'Authentication failed.';errEl.style.display='block';
-    document.getElementById('auth-btn').textContent=authMode==='signin'?'sign in →':'sign up →';
-    document.getElementById('auth-btn').disabled=false;
-  }
-}
-
-function onAuthSuccess(){
-  document.getElementById('setup-screen').style.display='none';
-  // Load profile from Supabase
-  supabaseClient.from('profiles').select('*').eq('id',currentUser.id).single().then(function(result){
-    if(result.data){
-      userProfile=result.data;
-      applyProfile(userProfile);
-      document.getElementById('app').style.display='flex';
-      loadSettings();loadAllData();
-    } else {
-      // No profile yet — show onboarding
-      var meta=currentUser.user_metadata||{};
-      if(meta.display_name)document.getElementById('ob-name').value=meta.display_name;
-      document.getElementById('onboarding-screen').style.display='flex';
-    }
-  });
-}
-
-function applyProfile(p){
-  var name=p.display_name||currentUser.email.split('@')[0];
-  var tdee=p.calorie_target||calcTDEE(p);
-  userConfig.weight=p.weight_kg||userConfig.weight;
-  userConfig.height=p.height_cm||userConfig.height;
-  userConfig.activity=p.activity||userConfig.activity;
-  userConfig.calorieTarget=tdee;
-  userConfig.sex=p.sex||'male';
-  localStorage.setItem('fl-config',JSON.stringify(userConfig));
-  var nameEl=document.querySelector('.profile-block .name');
-  if(nameEl)nameEl.textContent=name;
-  var age=25;if(p.birthday){var b=new Date(p.birthday);age=Math.floor((Date.now()-b)/31557600000);}
-  var ageEl=document.getElementById('sidebar-age');
-  var weightEl=document.getElementById('sidebar-weight');
-  var kcalEl=document.getElementById('sidebar-kcal');
-  if(ageEl)ageEl.textContent=age;
-  if(weightEl)weightEl.textContent=p.weight_kg||userConfig.weight||'?';
-  if(kcalEl)kcalEl.textContent=userConfig.calorieTarget;
-  var greetingEl=document.getElementById('greeting-msg');
-  if(greetingEl)greetingEl.textContent='Hey '+name+'! Log food, activity, or symptoms — all in one place. I\'ll figure out what to track. You can also mention when something happened ("had this at 8am") and I\'ll set the time correctly.';
-}
-
-async function saveOnboarding(){
-  var name=document.getElementById('ob-name').value.trim();
-  var birthday=document.getElementById('ob-birthday').value;
-  var sex=document.getElementById('ob-sex').value;
-  var weight=parseFloat(document.getElementById('ob-weight').value);
-  var height=parseFloat(document.getElementById('ob-height').value);
-  var activity=document.getElementById('ob-activity').value;
-  var errEl=document.getElementById('ob-error');
-  if(!name||!birthday||!weight||!height){errEl.textContent='Please fill in all fields.';errEl.style.display='block';return;}
-  var tdee=calcTDEE({weight_kg:weight,height_cm:height,birthday:birthday,sex:sex,activity:activity});
-  var profile={id:currentUser.id,display_name:name,birthday:birthday,sex:sex,weight_kg:weight,height_cm:height,activity:activity,calorie_target:tdee,updated_at:new Date().toISOString()};
-  var {error}=await supabaseClient.from('profiles').upsert(profile);
-  if(error){errEl.textContent='Save failed: '+error.message;errEl.style.display='block';return;}
-  userProfile=profile;
-  applyProfile(profile);
-  document.getElementById('onboarding-screen').style.display='none';
-  document.getElementById('app').style.display='flex';
-  loadSettings();loadAllData();
-}
-
 async function loadAllData() {
-  if(!supabaseClient||!currentUser)return;
+  if(!supabaseClient)return;
   setSyncStatus('syncing','syncing...');
   try {
     var cutoff=new Date(Date.now()-90*86400000).toISOString();
-    var uid=currentUser.id;
     var [fe,fa,fh]=await Promise.all([
-      supabaseClient.from('entries').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
-      supabaseClient.from('activities').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
-      supabaseClient.from('health_events').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false})
+      supabaseClient.from('entries').select('*').gte('created_at',cutoff).order('created_at',{ascending:false}),
+      supabaseClient.from('activities').select('*').gte('created_at',cutoff).order('created_at',{ascending:false}),
+      supabaseClient.from('health_events').select('*').gte('created_at',cutoff).order('created_at',{ascending:false})
     ]);
     if(fe.error)throw fe.error;
     entries=(fe.data||[]).map(normaliseEntry);
@@ -684,51 +441,36 @@ async function loadAllData() {
 
 function normaliseEntry(row) {
   var dt=new Date(row.created_at);
-  var localDate=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-  return {id:row.id,date:localDate,time:dt.toTimeString().slice(0,5),
+  return {id:row.id,date:dt.toISOString().slice(0,10),time:dt.toTimeString().slice(0,5),
     meal:row.meal_type||'other',items:row.description||'',note:row.notes||null,
     calories:row.calories||null,protein_g:row.protein||null,carbs_g:row.carbs||null,fat_g:row.fat||null,
     sugar_g:row.sugar||null,fibre_g:row.fibre||null,sodium_mg:row.sodium||null,
     vitamin_c:row.vitamin_c||null,vitamin_d:row.vitamin_d||null,
-    iron:row.iron||null,calcium:row.calcium||null,omega3:row.omega3||null,
-    caffeine_mg:row.caffeine_mg||null,
-    has_dairy:row.has_dairy||false,has_gluten:row.has_gluten||false,
-    is_acidic:row.is_acidic||false,has_alcohol:row.has_alcohol||false,
-    has_nicotine:row.has_nicotine||false,has_cannabis:row.has_cannabis||false};
+    iron:row.iron||null,calcium:row.calcium||null,omega3:row.omega3||null};
 }
-function normaliseActivity(row){var dt=new Date(row.created_at);var localDate=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');return{id:row.id,date:localDate,time:dt.toTimeString().slice(0,5),activity_type:row.activity_type||'other',duration_min:row.duration_min||null,distance_km:row.distance_km||null,calories_burned:row.calories_burned||null,intensity:row.intensity||null,notes:row.notes||''};}
-function normaliseHealth(row){var dt=new Date(row.created_at);var localDate=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');return{id:row.id,date:localDate,time:dt.toTimeString().slice(0,5),event_type:row.event_type||'symptom',description:row.description||'',severity:row.severity||null,notes:row.notes||''};}
+function normaliseActivity(row){var dt=new Date(row.created_at);return{id:row.id,date:dt.toISOString().slice(0,10),time:dt.toTimeString().slice(0,5),activity_type:row.activity_type||'other',duration_min:row.duration_min||null,distance_km:row.distance_km||null,calories_burned:row.calories_burned||null,intensity:row.intensity||null,notes:row.notes||''};}
+function normaliseHealth(row){var dt=new Date(row.created_at);return{id:row.id,date:dt.toISOString().slice(0,10),time:dt.toTimeString().slice(0,5),event_type:row.event_type||'symptom',description:row.description||'',severity:row.severity||null,notes:row.notes||''};}
 
 async function saveEntryToSupabase(e){
-  var payload={
-    user_id:currentUser.id,
+  var {data,error}=await supabaseClient.from('entries').insert({
     meal_type:e.meal,description:e.items,notes:e.note||null,
     calories:e.calories,protein:e.protein_g,carbs:e.carbs_g,fat:e.fat_g,
     sugar:e.sugar_g||null,fibre:e.fibre_g||null,sodium:e.sodium_mg||null,
     vitamin_c:e.vitamin_c||null,vitamin_d:e.vitamin_d||null,
     iron:e.iron||null,calcium:e.calcium||null,omega3:e.omega3||null,
-    raw_input:e.raw_input||e.items,
-    caffeine_mg:e.caffeine_mg||null,
-    has_dairy:e.has_dairy||false,
-    has_gluten:e.has_gluten||false,
-    is_acidic:e.is_acidic||false,
-    has_alcohol:e.has_alcohol||false,
-    has_nicotine:e.has_nicotine||false,
-    has_cannabis:e.has_cannabis||false
-  };
-  if(e.created_at)payload.created_at=e.created_at;
-  var {data,error}=await supabaseClient.from('entries').insert(payload).select().single();
-  if(error){console.error('Supabase insert error:',JSON.stringify(error));setSyncStatus('error','● save failed: '+error.message);return null;}
+    raw_input:e.raw_input||e.items
+  }).select().single();
+  if(error){console.error(error);return null;}
   return data;
 }
-async function saveActivityToSupabase(a){var{data,error}=await supabaseClient.from('activities').insert({user_id:currentUser.id,activity_type:a.activity_type,duration_min:a.duration_min,distance_km:a.distance_km,calories_burned:a.calories_burned,intensity:a.intensity,notes:a.notes}).select().single();if(error){console.error(error);return null;}return data;}
-async function saveHealthToSupabase(h){var{data,error}=await supabaseClient.from('health_events').insert({user_id:currentUser.id,event_type:h.event_type,description:h.description,severity:h.severity,notes:h.notes}).select().single();if(error){console.error(error);return null;}return data;}
+async function saveActivityToSupabase(a){var{data,error}=await supabaseClient.from('activities').insert({activity_type:a.activity_type,duration_min:a.duration_min,distance_km:a.distance_km,calories_burned:a.calories_burned,intensity:a.intensity,notes:a.notes}).select().single();if(error){console.error(error);return null;}return data;}
+async function saveHealthToSupabase(h){var{data,error}=await supabaseClient.from('health_events').insert({event_type:h.event_type,description:h.description,severity:h.severity,notes:h.notes}).select().single();if(error){console.error(error);return null;}return data;}
 
 // ── Nutrient bars ─────────────────────────────────────────────────
 function getTodayTotals() {
-  var _n=new Date();var d=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0');
+  var d=new Date().toISOString().slice(0,10);
   var t={calories:0,protein:0,carbs:0,fat:0,sugar:0,fibre:0,sodium:0,vitamin_c:0,vitamin_d:0,iron:0,calcium:0,omega3:0};
-  entries.filter(function(e){return e.date===d && e.meal!=='water';}).forEach(function(e){
+  entries.filter(function(e){return e.date===d;}).forEach(function(e){
     t.calories+=(e.calories||0); t.protein+=(e.protein_g||0); t.carbs+=(e.carbs_g||0);
     t.fat+=(e.fat_g||0); t.sugar+=(e.sugar_g||0); t.fibre+=(e.fibre_g||0);
     t.sodium+=(e.sodium_mg||0); t.vitamin_c+=(e.vitamin_c||0); t.vitamin_d+=(e.vitamin_d||0);
@@ -780,7 +522,6 @@ function updateNutrientBars() {
       +'<div class="nbar-value" style="color:'+(over?barColor:'var(--text3)')+'">'+valStr+'</div>';
     barsEl.appendChild(row);
   });
-  renderWaterBottles();
 }
 
 function togglePanel(){
@@ -794,51 +535,26 @@ function togglePanel(){
 
 // ── Init ──────────────────────────────────────────────────────────
 function init(){
-  initSupabase();
-  supabaseClient.auth.getSession().then(function(result){
-    var session=result.data&&result.data.session;
-    if(session&&session.user){
-      currentUser=session.user;
-      onAuthSuccess();
-    } else {
-      document.getElementById('setup-screen').style.display='flex';
-    }
-  });
+  var key=localStorage.getItem('fl-apikey'),sbUrl=localStorage.getItem('fl-sb-url'),sbKey=localStorage.getItem('fl-sb-key');
+  if(!key||!sbUrl||!sbKey){document.getElementById('setup-screen').style.display='flex';}
+  else{initSupabase();document.getElementById('app').style.display='flex';loadSettings();loadAllData();}
+}
+function saveSetup(){
+  var k=document.getElementById('api-key-input').value.trim();
+  var su=document.getElementById('sb-url-input').value.trim().replace(/\/$/,'');
+  var sk=document.getElementById('sb-key-input').value.trim();
+  if(!k.startsWith('sk-')){alert('Invalid Anthropic key.');return;}
+  if(!su.includes('supabase.co')){alert('Invalid Supabase URL.');return;}
+  if(!sk.startsWith('eyJ')){alert('Invalid Supabase key.');return;}
+  localStorage.setItem('fl-apikey',k);localStorage.setItem('fl-sb-url',su);localStorage.setItem('fl-sb-key',sk);
+  initSupabase();document.getElementById('setup-screen').style.display='none';document.getElementById('app').style.display='flex';
+  loadSettings();loadAllData();
 }
 
 // ── AI / Chat ─────────────────────────────────────────────────────
 function formatReply(text){
   if(!text)return'';
-  // Process markdown tables first (before escaping)
-  var lines = text.split('\n');
-  var result = [];
-  var i = 0;
-  while(i < lines.length){
-    if(lines[i].trim().startsWith('|') && i+1 < lines.length && lines[i+1].trim().match(/^\|[\s\-|]+\|$/)){
-      // It's a table
-      var tableHtml = '<table style="border-collapse:collapse;width:100%;margin:8px 0;font-size:12px;font-family:\'DM Mono\',monospace;">';
-      // Header row
-      var headers = lines[i].trim().replace(/^\||\|$/g,'').split('|').map(function(c){return c.trim();});
-      tableHtml += '<tr>' + headers.map(function(h){return '<th style="text-align:left;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.1);color:var(--text2);">'+h+'</th>';}).join('') + '</tr>';
-      i += 2; // skip header and separator
-      while(i < lines.length && lines[i].trim().startsWith('|')){
-        var cells = lines[i].trim().replace(/^\||\|$/g,'').split('|').map(function(c){return c.trim();});
-        tableHtml += '<tr>' + cells.map(function(c){return '<td style="padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text);">'+c+'</td>';}).join('') + '</tr>';
-        i++;
-      }
-      tableHtml += '</table>';
-      result.push(tableHtml);
-    } else {
-      result.push(lines[i]);
-      i++;
-    }
-  }
-  text = result.join('\n');
-
   var html=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    // restore table html (was already built, protect it)
-    .replace(/&lt;(\/?(table|tr|th|td|strong)[^&]*)&gt;/g,'<$1>');
-  html = html
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:500;margin:10px 0 4px">$1</h3>')
     .replace(/^## (.+)$/gm,'<h3 style="font-size:14px;font-weight:500;margin:12px 0 6px">$1</h3>')
@@ -860,9 +576,7 @@ async function sendMessage(){
 
   var now=new Date();
   var timeStr=now.toTimeString().slice(0,5);
-  var dateStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-  var yesterday=new Date(now-86400000);
-  var yesterdayStr=yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  var dateStr=now.toISOString().slice(0,10);
   var todayEntries=entries.filter(function(e){return e.date===dateStr;});
   var todayActs=activities.filter(function(a){return a.date===dateStr;});
   var todayHealth=healthEvents.filter(function(h){return h.date===dateStr;});
@@ -873,71 +587,52 @@ async function sendMessage(){
   var actSummary=todayActs.map(function(a){return a.activity_type+(a.duration_min?' '+a.duration_min+'min':'')+(a.distance_km?' '+a.distance_km+'km':'');}).join(', ');
   var healthSummary=todayHealth.map(function(h){return h.event_type+': '+h.description;}).join(', ');
 
-  var hadActivityToday = activities.some(function(a){ return a.date===dateStr; });
-  var waterTarget = calcWaterTarget(userProfile, hadActivityToday);
-  var waterToday = entries.filter(function(e){ return e.date===dateStr && e.meal==='water'; }).reduce(function(s,e){ return s+(e.calories||0); }, 0);
-  var recentEntriesContext = entries.filter(function(e){ return e.meal!=='water'; }).slice(0,5).map(function(e){
-    return '{"id":"'+e.id+'","meal":"'+e.meal+'","items":"'+e.items+'","date":"'+e.date+'","time":"'+e.time+'","calories":'+e.calories+'}';
-  }).join(',\n');
+  var systemPrompt=`You are a personal nutrition and health assistant for Clem (male, 23, ${userConfig.weight}kg, lightly active). Daily targets: ~${userConfig.calorieTarget} kcal base (~${effectiveTarget} adjusted for today's activity), ~130g protein, ~280g carbs, ~50g fat, ~50g sugar max, ~30g fibre, ~2300mg sodium max, ~90mg vit C, ~20µg vit D, ~18mg iron, ~1000mg calcium, ~1.6g omega-3. Takes Cela multivitamins each morning.
 
-  var p = userProfile || {};
-  var userName = p.display_name || (currentUser ? currentUser.email.split('@')[0] : 'User');
-  var userSex = p.sex || 'unknown';
-  var userAge = 25;
-  if(p.birthday){ var bd=new Date(p.birthday); userAge=Math.floor((Date.now()-bd)/31557600000); }
-  var userWeight = p.weight_kg || userConfig.weight || 70;
-  var userActivity = p.activity || userConfig.activity || 'lightly active';
+Today so far: ${Math.round(t.calories)} kcal, ${Math.round(t.protein_g||0)}g protein. Food: ${todaySummary||'nothing'}. Activity: ${actSummary||'none'}. Health: ${healthSummary||'none'}. Current time: ${timeStr}.
 
-  var systemPrompt=`You are a personal health assistant for ${userName} (${userSex}, ${userAge}y, ${userWeight}kg, ${userActivity}). Daily targets: ${userConfig.calorieTarget} kcal/day (~${effectiveTarget} today), 130g protein, 280g carbs, 50g fat, 50g sugar max, 30g fibre, 2300mg sodium max.
+TIME INFERENCE: If the user mentions a time ("at 8am", "this morning", "yesterday at noon", "around 7pm"), use that as the entry time in HH:MM 24h format. If they say "yesterday", use yesterday's date. If no time mentioned, use current time ${timeStr} and today's date ${dateStr}.
 
-Today: ${Math.round(t.calories)} kcal eaten, ${Math.round(t.protein_g||0)}g protein. Water: ${waterToday}ml / ${waterTarget}ml target. Food: ${todaySummary||'nothing'}. Activity: ${actSummary||'none'}. Health: ${healthSummary||'none'}. Time: ${timeStr}, date: ${dateStr}.
+Known issue: recurring stomach problems — cross-reference with food if mentioned. Never add disclaimers unless medically necessary.
 
-Recent entries (for edits/corrections):
-[${recentEntriesContext}]
-
-RULES:
-- If user mentions a time ("at 8am", "this morning"), use it as entry_time (HH:MM 24h). "Yesterday" = ${yesterdayStr}.
-- For complex meals with many items, log as ONE entry with a combined description. Do NOT split into multiple entries unless the user clearly describes separate meals.
-- WATER: If user mentions drinking water or any liquid (glass of water, bottle of water, 500ml water etc), log it as a separate entry with meal="water". Estimate ml: glass=250ml, small bottle=330ml, bottle=500ml, large bottle=750ml, 1L bottle=1000ml. Store the ml amount in the calories field.
-- INGREDIENT FLAGS: For every food entry, auto-tag these fields based on ingredients:
-  * caffeine_mg: estimate mg of caffeine (espresso~63mg, drip coffee~95mg, red bull~80mg, mate~30mg, tea~30mg, 0 if none)
-  * has_dairy: true if contains milk, cheese, yogurt, butter, cream, whey
-  * has_gluten: true if contains wheat, bread, pasta, flour, beer, most sauces
-  * is_acidic: true if coffee, citrus, tomato, vinegar, alcohol, carbonated drinks
-  * has_alcohol: true if contains alcohol
-  * has_nicotine: true if cigarette, snus, nicotine pouch, vape
-  * has_cannabis: true if cannabis, weed, edible Use the item description or common knowledge to determine quantity — a standard can is 330ml, a bottle is typically 500ml, a glass is 250ml. Never save the per-100 figure directly.
-- If quantity is ambiguous (e.g. "a freeway mate"), assume the most common serving size (1 can, 1 piece, 1 portion) and log it.
-- Keep "items" concise (under 100 chars). Keep "note" under 80 chars or null.
-- If user asks a question (not logging food), set entries/activities/health_events/updates to [] and answer in "reply".
-- EDITING: If user corrects or updates a previous entry (e.g. "actually it was X", "change the sugar to Y", "update my last entry"), use the "updates" array with the entry id from the recent entries list above. Do NOT create a new entry when correcting an existing one.
-- CRITICAL: Your entire response must be valid, complete JSON. Never truncate. If in doubt, use null for nutrients rather than guessing.
-
-Respond ONLY in this exact JSON format, nothing else:
-{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"reply":"string","suggestion":"string|null"}
-Only populate arrays for what was actually mentioned. Empty arrays [] for the rest.`;
+Respond ONLY in valid JSON (no markdown):
+{
+  "entries": [{
+    "meal": "breakfast|lunch|dinner|snack|drink|other",
+    "items": "concise item list with quantities",
+    "note": "one brief insightful comment about this specific food — calorie breakdown, nutrition highlight, or useful context. Keep it short (1 sentence). null if nothing interesting to say.",
+    "entry_date": "YYYY-MM-DD",
+    "entry_time": "HH:MM",
+    "calories": number|null,
+    "protein_g": number|null,
+    "carbs_g": number|null,
+    "fat_g": number|null,
+    "sugar_g": number|null,
+    "fibre_g": number|null,
+    "sodium_mg": number|null,
+    "vitamin_c": number|null,
+    "vitamin_d": number|null,
+    "iron": number|null,
+    "calcium": number|null,
+    "omega3": number|null
+  }],
+  "activities": [{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":number|null,"distance_km":number|null,"calories_burned":number|null,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],
+  "health_events": [{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1-5|null,"notes":"correlation with food if relevant","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],
+  "reply": "markdown response — short for logging, detailed for questions",
+  "suggestion": "next meal idea only when food was logged, quick+easy, kcal-aware. null otherwise"
+}
+Only populate arrays for what was actually mentioned.`;
 
   try {
-    var res=await fetch(PROXY_URL+'/api/chat',{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},
-      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:2000,system:systemPrompt,messages:[{role:'user',content:text}]})
+      headers:{'Content-Type':'application/json','x-api-key':localStorage.getItem('fl-apikey'),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,system:systemPrompt,messages:[{role:'user',content:text}]})
     });
-    if(!res.ok){var e=await res.json();throw new Error(typeof e.error==='object'?JSON.stringify(e.error):(e.error||'Proxy error '+res.status));}
     var data=await res.json();
-    if(data.error)throw new Error(typeof data.error==='object'?JSON.stringify(data.error):data.error.message||'API error');
+    if(data.error)throw new Error(data.error.message);
     var raw=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
-    // Extract JSON — find the first { and last } to handle any surrounding text/backticks
-    var jsonStart=raw.indexOf('{');
-    var jsonEnd=raw.lastIndexOf('}');
-    var cleaned=jsonStart>-1&&jsonEnd>-1?raw.slice(jsonStart,jsonEnd+1):raw.replace(/```json|```/g,'').trim();
-    var parsed;
-    try {
-      parsed=JSON.parse(cleaned);
-    } catch(e) {
-      // Claude replied in plain text (e.g. answering a question) — show it directly
-      parsed={entries:[],activities:[],health_events:[],reply:raw,suggestion:null};
-    }
+    var parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
 
     setSyncStatus('syncing','saving...');
     var chips=[];
@@ -948,12 +643,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
         var entryDate=e.entry_date||dateStr;
         var entryTime=e.entry_time||timeStr;
         // Build a fake created_at so Supabase gets the right timestamp
-        var tzOffset = -now.getTimezoneOffset();
-        var tzSign = tzOffset>=0?'+':'-';
-        var tzHH = String(Math.floor(Math.abs(tzOffset)/60)).padStart(2,'0');
-        var tzMM = String(Math.abs(tzOffset)%60).padStart(2,'0');
-        var tzStr = tzSign+tzHH+':'+tzMM;
-        var createdAt=entryDate+'T'+entryTime+':00'+tzStr;
+        var createdAt=entryDate+'T'+entryTime+':00';
         var localE={
           id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
           date:entryDate,time:entryTime,meal:e.meal,items:e.items,note:e.note||null,
@@ -964,67 +654,16 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
         };
         // Save with custom timestamp
         var {data:savedE,error:errE}=await supabaseClient.from('entries').insert({
-          user_id:currentUser.id,
           meal_type:localE.meal,description:localE.items,notes:localE.note,
           calories:localE.calories,protein:localE.protein_g,carbs:localE.carbs_g,fat:localE.fat_g,
           sugar:localE.sugar_g,fibre:localE.fibre_g,sodium:localE.sodium_mg,
           vitamin_c:localE.vitamin_c,vitamin_d:localE.vitamin_d,
           iron:localE.iron,calcium:localE.calcium,omega3:localE.omega3,
-          raw_input:text,created_at:createdAt,
-          caffeine_mg:localE.caffeine_mg||null,
-          has_dairy:localE.has_dairy||false,
-          has_gluten:localE.has_gluten||false,
-          is_acidic:localE.is_acidic||false,
-          has_alcohol:localE.has_alcohol||false,
-          has_nicotine:localE.has_nicotine||false,
-          has_cannabis:localE.has_cannabis||false
+          raw_input:text,created_at:createdAt
         }).select().single();
-        if(errE){console.error('Insert error:',JSON.stringify(errE));setSyncStatus('error','● save failed: '+errE.message);}
         if(savedE)localE.id=savedE.id;
         entries.unshift(localE);
         chips.push({text:e.items+(e.calories?' · ~'+e.calories+'kcal':''),type:'food',meal:e.meal});
-      }
-    }
-
-    if(parsed.updates&&parsed.updates.length){
-      for(var u=0;u<parsed.updates.length;u++){
-        var upd=parsed.updates[u];
-        if(!upd.id)continue;
-        // Build patch object — only include non-null fields
-        var patch={};
-        if(upd.calories!=null)patch.calories=upd.calories;
-        if(upd.protein_g!=null)patch.protein=upd.protein_g;
-        if(upd.carbs_g!=null)patch.carbs=upd.carbs_g;
-        if(upd.fat_g!=null)patch.fat=upd.fat_g;
-        if(upd.sugar_g!=null)patch.sugar=upd.sugar_g;
-        if(upd.fibre_g!=null)patch.fibre=upd.fibre_g;
-        if(upd.sodium_mg!=null)patch.sodium=upd.sodium_mg;
-        if(upd.items)patch.description=upd.items;
-        if(upd.note!==undefined)patch.notes=upd.note;
-        // Handle time/date updates
-        if(upd.entry_time||upd.entry_date){
-          var existingEntry=entries.find(function(e){return e.id===upd.id;});
-          var newDate=upd.entry_date||(existingEntry?existingEntry.date:dateStr);
-          var newTime=upd.entry_time||(existingEntry?existingEntry.time:timeStr);
-          patch.created_at=newDate+'T'+newTime+':00';
-        }
-        // Update Supabase
-        await supabaseClient.from('entries').update(patch).eq('id',upd.id).eq('user_id',currentUser.id);
-        // Update local state
-        var localIdx=entries.findIndex(function(e){return e.id===upd.id;});
-        if(localIdx>-1){
-          if(upd.calories!=null)entries[localIdx].calories=upd.calories;
-          if(upd.protein_g!=null)entries[localIdx].protein_g=upd.protein_g;
-          if(upd.carbs_g!=null)entries[localIdx].carbs_g=upd.carbs_g;
-          if(upd.fat_g!=null)entries[localIdx].fat_g=upd.fat_g;
-          if(upd.sugar_g!=null)entries[localIdx].sugar_g=upd.sugar_g;
-          if(upd.fibre_g!=null)entries[localIdx].fibre_g=upd.fibre_g;
-          if(upd.sodium_mg!=null)entries[localIdx].sodium_mg=upd.sodium_mg;
-          if(upd.items)entries[localIdx].items=upd.items;
-          if(upd.entry_time)entries[localIdx].time=upd.entry_time;
-          if(upd.entry_date)entries[localIdx].date=upd.entry_date;
-        }
-        chips.push({text:'updated: '+(upd.items||'entry'),type:'food',meal:'other'});
       }
     }
 
@@ -1104,32 +743,23 @@ function renderHistory(){
   list.innerHTML='';
   days.forEach(function(day){
     var de=byDay[day].sort(function(a,b){return(a.time||'').localeCompare(b.time||'');});
-    var dayCals=de.filter(function(e){return e.meal!=='water';}).reduce(function(s,e){return s+(e.calories||0);},0);
+    var dayCals=de.reduce(function(s,e){return s+(e.calories||0);},0);
     var card=document.createElement('div');card.className='day-card';
     card.innerHTML='<div class="day-card-header"><div class="day-label">'+fmtDate(day)+'</div><div class="day-meta-chips">'+(dayCals?'<div class="meta-chip cal">~'+dayCals+' kcal</div>':'')+'<div class="meta-chip">'+de.length+' entr'+(de.length===1?'y':'ies')+'</div></div></div>';
     var eDiv=document.createElement('div');eDiv.className='day-entries-list';
     de.forEach(function(e){
       var row=document.createElement('div');row.className='hist-entry';
       row.onclick=function(){openEntryModal(e);};
-      var calStr = e.meal==='water' ? (e.calories?e.calories+'ml':'') : (e.calories?'~'+e.calories+'kcal':'');
       row.innerHTML='<div class="hist-time">'+(e.time||'')+'</div><div class="hist-meal-badge badge-'+(e.meal||'other')+'">'+(e.meal||'other')+'</div>'
         +'<div class="hist-content"><div class="hist-items">'+e.items+'</div>'+(e.note?'<div class="hist-note">'+e.note+'</div>':'')+'</div>'
-        +'<div class="hist-cals">'+calStr+'</div>'
+        +'<div class="hist-cals">'+(e.calories?'~'+e.calories+'kcal':'')+'</div>'
         +'<button class="del-btn" onclick="event.stopPropagation();deleteFood(\''+e.id+'\')">✕</button>';
       eDiv.appendChild(row);
     });
     card.appendChild(eDiv);list.appendChild(card);
   });
 }
-var confirmResolve=null;
-function showConfirm(msg){
-  return new Promise(function(resolve){
-    confirmResolve=function(val){document.getElementById('confirm-modal').style.display='none';confirmResolve=null;resolve(val);};
-    document.getElementById('confirm-msg').textContent=msg||'Are you sure?';
-    document.getElementById('confirm-modal').style.display='flex';
-  });
-}
-async function deleteFood(id){if(!await showConfirm('Delete this?'))return;entries=entries.filter(function(e){return e.id!==id;});if(supabaseClient)await supabaseClient.from('entries').delete().eq('id',id);renderHistory();updateNutrientBars();}
+async function deleteFood(id){if(!confirm('Delete?'))return;entries=entries.filter(function(e){return e.id!==id;});if(supabaseClient)await supabaseClient.from('entries').delete().eq('id',id);renderHistory();updateNutrientBars();}
 
 // ── Entry Modal ───────────────────────────────────────────────────
 function openEntryModal(entry){
@@ -1147,23 +777,11 @@ function openEntryModal(entry){
     {label:'Vit D',val:entry.vitamin_d,unit:'µg'},
     {label:'Iron',val:entry.iron,unit:'mg'},
     {label:'Calcium',val:entry.calcium,unit:'mg'},
-    {label:'Caffeine',val:entry.caffeine_mg,unit:'mg'},
     {label:'Omega-3',val:entry.omega3,unit:'g'}
   ];
   nutsEl.innerHTML=nuts.map(function(n){
     return '<div class="modal-nut"><div class="modal-nut-label">'+n.label+'</div><div class="modal-nut-val">'+(n.val!=null?n.val:'—')+'<span class="modal-nut-unit"> '+(n.val!=null?n.unit:'')+'</span></div></div>';
   }).join('');
-  // Ingredient flags
-  var flags=[];
-  if(entry.has_dairy)flags.push('🥛 dairy');
-  if(entry.has_gluten)flags.push('🌾 gluten');
-  if(entry.is_acidic)flags.push('🍋 acidic');
-  if(entry.has_alcohol)flags.push('🍷 alcohol');
-  if(entry.has_nicotine)flags.push('🚬 nicotine');
-  if(entry.has_cannabis)flags.push('🌿 cannabis');
-  if(flags.length){
-    nutsEl.innerHTML+='<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">'+flags.map(function(f){return '<span style="font-size:11px;background:rgba(255,255,255,0.06);border-radius:6px;padding:3px 8px;color:var(--text2);">'+f+'</span>';}).join('')+'</div>';
-  }
   document.getElementById('modal-ai-comment').innerHTML='<span class="modal-ai-loading">analysing meal...</span>';
   document.getElementById('entry-modal').classList.add('open');
   // Fetch AI comment
@@ -1174,10 +792,10 @@ async function fetchMealComment(entry){
   var t=getTodayTotals();
   var prompt='Clem just logged: '+entry.items+' ('+entry.calories+'kcal, '+entry.protein_g+'g protein, '+entry.carbs_g+'g carbs, '+entry.fat_g+'g fat, sugar:'+entry.sugar_g+'g, fibre:'+entry.fibre_g+'g). Today\'s running total: '+Math.round(t.calories)+'/'+userConfig.calorieTarget+'kcal, '+Math.round(t.protein||0)+'g protein. Give a 2-3 sentence smart comment on this specific meal: what\'s good about it, anything to watch, how it fits the day. Be direct and useful, not generic.';
   try{
-    var res=await fetch(PROXY_URL+'/api/chat',{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},
-      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:200,messages:[{role:'user',content:prompt}]})
+      headers:{'Content-Type':'application/json','x-api-key':localStorage.getItem('fl-apikey'),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,messages:[{role:'user',content:prompt}]})
     });
     var data=await res.json();
     var txt=(data.content||[]).map(function(b){return b.text||'';}).join('');
@@ -1213,10 +831,10 @@ Respond ONLY in JSON:
 {"suggestions":[{"title":"Meal name","kcal":number,"why":"1-2 sentences why this fits today","ingredients":"key ingredients","time_min":number}]}`;
 
   try{
-    var res=await fetch(PROXY_URL+'/api/chat',{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},
-      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:600,messages:[{role:'user',content:prompt}]})
+      headers:{'Content-Type':'application/json','x-api-key':localStorage.getItem('fl-apikey'),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:prompt}]})
     });
     var data=await res.json();
     var raw=(data.content||[]).map(function(b){return b.text||'';}).join('');
@@ -1262,7 +880,7 @@ function renderActivity(){
     card.appendChild(aDiv);list.appendChild(card);
   });
 }
-async function deleteActivity(id){if(!await showConfirm('Delete this?'))return;activities=activities.filter(function(a){return a.id!==id;});if(supabaseClient)await supabaseClient.from('activities').delete().eq('id',id);renderActivity();}
+async function deleteActivity(id){if(!confirm('Delete?'))return;activities=activities.filter(function(a){return a.id!==id;});if(supabaseClient)await supabaseClient.from('activities').delete().eq('id',id);renderActivity();}
 
 // ── Health ────────────────────────────────────────────────────────
 function renderHealth(){
@@ -1294,7 +912,7 @@ function renderHealth(){
     card.appendChild(hDiv);list.appendChild(card);
   });
 }
-async function deleteHealth(id){if(!await showConfirm('Delete this?'))return;healthEvents=healthEvents.filter(function(h){return h.id!==id;});if(supabaseClient)await supabaseClient.from('health_events').delete().eq('id',id);renderHealth();}
+async function deleteHealth(id){if(!confirm('Delete?'))return;healthEvents=healthEvents.filter(function(h){return h.id!==id;});if(supabaseClient)await supabaseClient.from('health_events').delete().eq('id',id);renderHealth();}
 
 // ── Dashboard ─────────────────────────────────────────────────────
 function renderDashboard(){
@@ -1334,51 +952,32 @@ function renderDashboard(){
 
 // ── Settings ──────────────────────────────────────────────────────
 function loadSettings(){
-  var p=userProfile||{};
-  if(document.getElementById('settings-name'))document.getElementById('settings-name').value=p.display_name||'';
-  if(document.getElementById('settings-birthday'))document.getElementById('settings-birthday').value=p.birthday||'';
-  if(document.getElementById('settings-sex'))document.getElementById('settings-sex').value=p.sex||'male';
-  if(document.getElementById('settings-weight'))document.getElementById('settings-weight').value=p.weight_kg||userConfig.weight||'';
-  if(document.getElementById('settings-height'))document.getElementById('settings-height').value=p.height_cm||userConfig.height||'';
-  if(document.getElementById('settings-activity'))document.getElementById('settings-activity').value=p.activity||userConfig.activity||'light';
-  if(document.getElementById('settings-calories'))document.getElementById('settings-calories').value=p.calorie_target||userConfig.calorieTarget||'';
-  if(document.getElementById('weight-quick'))document.getElementById('weight-quick').value=p.weight_kg||userConfig.weight||'';
-  if(document.getElementById('sidebar-weight'))document.getElementById('sidebar-weight').textContent=p.weight_kg||userConfig.weight||'';
-  var emailEl=document.getElementById('settings-email');
-  if(emailEl&&currentUser)emailEl.textContent=currentUser.email;
+  document.getElementById('weight-quick').value=userConfig.weight;
+  document.getElementById('sidebar-weight').textContent=userConfig.weight;
+  document.getElementById('settings-weight').value=userConfig.weight;
+  document.getElementById('settings-calories').value=userConfig.calorieTarget;
+  var k=localStorage.getItem('fl-apikey')||'';
+  document.getElementById('api-key-display').textContent=k.slice(0,10)+'···';
+  var sbEl=document.getElementById('sb-status-text');
+  if(sbEl)sbEl.textContent=(localStorage.getItem('fl-sb-url')||'').replace('https://','');
 }
-async function saveSettings(){
-  var name=document.getElementById('settings-name').value.trim();
-  var birthday=document.getElementById('settings-birthday').value;
-  var sex=document.getElementById('settings-sex').value;
-  var weight=parseFloat(document.getElementById('settings-weight').value);
-  var height=parseFloat(document.getElementById('settings-height').value);
-  var activity=document.getElementById('settings-activity').value;
-  var calories=parseInt(document.getElementById('settings-calories').value);
-  var tdee=calories||calcTDEE({weight_kg:weight,height_cm:height,birthday:birthday,sex:sex,activity:activity});
-  var profile={id:currentUser.id,display_name:name,birthday:birthday,sex:sex,weight_kg:weight,height_cm:height,activity:activity,calorie_target:tdee,updated_at:new Date().toISOString()};
-  var {error}=await supabaseClient.from('profiles').upsert(profile);
-  if(error){showToast('save failed');return;}
-  userProfile=profile;
-  applyProfile(profile);
-  showToast('saved');
+function saveSettings(){
+  var w=parseFloat(document.getElementById('settings-weight').value);
+  var c=parseInt(document.getElementById('settings-calories').value);
+  var a=document.getElementById('settings-activity').value;
+  if(!isNaN(w))userConfig.weight=w;
+  if(!isNaN(c)){userConfig.calorieTarget=c;TARGETS.calories=c;}
+  userConfig.activity=a;
+  localStorage.setItem('fl-config',JSON.stringify(userConfig));
+  document.getElementById('sidebar-weight').textContent=userConfig.weight;
+  document.getElementById('weight-quick').value=userConfig.weight;
+  updateNutrientBars();showToast('saved');
 }
-async function signOut(){
-  await supabaseClient.auth.signOut();
-  currentUser=null;userProfile=null;entries=[];activities=[];healthEvents=[];
-  document.getElementById('app').style.display='none';
-  document.getElementById('setup-screen').style.display='flex';
-  authMode='signin';
-  document.getElementById('auth-subtitle').textContent='Sign in to your account.';
-  document.getElementById('auth-btn').textContent='sign in →';
-  document.getElementById('auth-btn').disabled=false;
-  document.getElementById('auth-error').style.display='none';
-  document.getElementById('auth-email').value='';
-  document.getElementById('auth-password').value='';
-}
-function updateWeightQuick(){var w=parseFloat(document.getElementById('weight-quick').value);if(isNaN(w))return;userConfig.weight=w;localStorage.setItem('fl-config',JSON.stringify(userConfig));if(document.getElementById('sidebar-weight'))document.getElementById('sidebar-weight').textContent=w;if(document.getElementById('settings-weight'))document.getElementById('settings-weight').value=w;showToast('weight updated');}
+function updateWeightQuick(){var w=parseFloat(document.getElementById('weight-quick').value);if(isNaN(w))return;userConfig.weight=w;localStorage.setItem('fl-config',JSON.stringify(userConfig));document.getElementById('sidebar-weight').textContent=w;document.getElementById('settings-weight').value=w;showToast('weight updated');}
+function changeApiKey(){var k=prompt('Enter new Anthropic API key:');if(k&&k.startsWith('sk-')){localStorage.setItem('fl-apikey',k);document.getElementById('api-key-display').textContent=k.slice(0,10)+'···';showToast('updated');}}
+function changeSupabaseKeys(){var url=prompt('Supabase URL:',localStorage.getItem('fl-sb-url')||'');if(!url)return;var key=prompt('Supabase anon key:','');if(!key)return;localStorage.setItem('fl-sb-url',url.trim().replace(/\/$/,''));localStorage.setItem('fl-sb-key',key.trim());initSupabase();loadSettings();loadAllData();showToast('reconfigured');}
 async function exportData(){var blob=new Blob([JSON.stringify({entries,activities,healthEvents,config:userConfig},null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='foodlog-export.json';a.click();}
-async function clearAllData(){if(!await showConfirm('Delete ALL your data? This cannot be undone.'))return;if(supabaseClient)await Promise.all([supabaseClient.from('entries').delete().eq('user_id',currentUser.id),supabaseClient.from('activities').delete().eq('user_id',currentUser.id),supabaseClient.from('health_events').delete().eq('user_id',currentUser.id)]);entries=[];activities=[];healthEvents=[];updateNutrientBars();showToast('cleared');}
+async function clearAllData(){if(!confirm('Delete ALL data from Supabase?'))return;if(!confirm('Really sure?'))return;var dummy='00000000-0000-0000-0000-000000000000';if(supabaseClient)await Promise.all([supabaseClient.from('entries').delete().neq('id',dummy),supabaseClient.from('activities').delete().neq('id',dummy),supabaseClient.from('health_events').delete().neq('id',dummy)]);entries=[];activities=[];healthEvents=[];updateNutrientBars();showToast('cleared');}
 
 // ── Nav ───────────────────────────────────────────────────────────
 function showPage(name){
