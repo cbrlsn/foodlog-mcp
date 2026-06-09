@@ -82,10 +82,10 @@ server.tool(
   'log_food',
   'Log a food or drink entry to Clem\'s nutrition tracker',
   {
-    meal_type: z.enum(['breakfast','lunch','dinner','snack','drink','other']),
+    meal_type: z.enum(['breakfast','lunch','dinner','snack','drink','water','other']),
     description: z.string().describe('Concise item list with quantities'),
     notes: z.string().optional().describe('Brief comment about the meal'),
-    calories: z.number().optional(),
+    calories: z.number().optional().describe('kcal — for water entries, store ml amount here instead'),
     protein: z.number().optional().describe('grams'),
     carbs: z.number().optional().describe('grams'),
     fat: z.number().optional().describe('grams'),
@@ -164,8 +164,8 @@ server.tool(
       sb.from('activities').select('*').gte('created_at', start).lte('created_at', end).order('created_at'),
       sb.from('health_events').select('*').gte('created_at', start).lte('created_at', end).order('created_at'),
     ]);
-    const totalCals = (fe.data || []).reduce((s, e) => s + (e.calories || 0), 0);
-    const totalProt = (fe.data || []).reduce((s, e) => s + (e.protein || 0), 0);
+    const totalCals = (fe.data || []).filter(e => e.meal_type !== 'water').reduce((s, e) => s + (e.calories || 0), 0);
+    const totalProt = (fe.data || []).filter(e => e.meal_type !== 'water').reduce((s, e) => s + (e.protein || 0), 0);
     const summary = { date, food: { entries: fe.data || [], totals: { calories: Math.round(totalCals), protein: Math.round(totalProt) } }, activities: fa.data || [], health_events: fh.data || [] };
     return { content: [{ type: 'text', text: JSON.stringify(summary, null, 2) }] };
   }
