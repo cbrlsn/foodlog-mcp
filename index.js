@@ -102,6 +102,12 @@ server.tool(
   async (args) => {
     const payload = { ...args };
     if (args.entry_datetime) { payload.created_at = args.entry_datetime; delete payload.entry_datetime; }
+    if (payload.meal_type === 'water') {
+      const ml = payload.calories || 0;
+      payload.calories = ml;
+      payload.protein = 0; payload.carbs = 0; payload.fat = 0;
+      payload.sugar = 0; payload.fibre = 0; payload.sodium = 0;
+    }
     const { data, error } = await sb.from('entries').insert(payload).select().single();
     if (error) return { content: [{ type: 'text', text: 'Error: ' + error.message }] };
     return { content: [{ type: 'text', text: `Logged: ${args.description} (${args.calories || '?'} kcal)` }] };
