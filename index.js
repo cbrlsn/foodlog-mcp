@@ -22,7 +22,7 @@ const app = express();
 // ── CORS ──────────────────────────────────────────────────────────
 // Only allow requests from our Netlify app
 const ALLOWED_ORIGINS = [
-  'https://clemsfoodlog.netlify.app',
+  'https://clemsfoodlog2.netlify.app',
   'http://localhost:3000',
   'http://localhost:8080',
 ];
