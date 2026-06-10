@@ -514,17 +514,6 @@
       </div>
     </div>
 
-    <!-- Drill-down modal -->
-    <div class="modal-overlay" id="drilldown-modal" onclick="if(event.target===this)this.classList.remove('open')">
-      <div class="modal">
-        <div class="modal-header">
-          <div class="modal-title" id="drilldown-title">—</div>
-          <button class="modal-close" onclick="document.getElementById('drilldown-modal').classList.remove('open')">✕</button>
-        </div>
-        <div id="drilldown-body"></div>
-      </div>
-    </div>
-
     <!-- SUGGESTIONS -->
     <div id="page-suggestions" class="page">
       <div class="page-header">
@@ -628,6 +617,17 @@
   </div>
 </div>
 
+<!-- Drill-down modal -->
+<div class="modal-overlay" id="drilldown-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="drilldown-title">—</div>
+      <button class="modal-close" onclick="document.getElementById('drilldown-modal').classList.remove('open')">✕</button>
+    </div>
+    <div id="drilldown-body"></div>
+  </div>
+</div>
+
 <!-- Entry detail modal -->
 <div class="modal-overlay" id="entry-modal" onclick="closeModal(event)">
   <div class="modal">
@@ -697,7 +697,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v16.4 · 2026-06-10 18:15';
+var APP_BUILD = 'v16.5 · 2026-06-10 18:20';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
