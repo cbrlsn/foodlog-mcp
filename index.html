@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0a'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-size='20' font-weight='600' fill='%23c9f25f'%3Ef%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230b0b0a'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-size='110' font-weight='600' fill='%23c9f25f'%3Ef%3C/text%3E%3C/svg%3E">
 <title>foodlog</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -30,8 +32,7 @@
   /* ── App shell ── */
   #app{display:flex;height:100vh;overflow:hidden;}
   #sidebar{width:228px;min-width:228px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 0 16px;}
-  #main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
-  #main::before{content:'';position:absolute;top:-220px;left:50%;transform:translateX(-50%);width:720px;height:420px;background:radial-gradient(ellipse at center,rgba(201,242,95,0.05),transparent 65%);pointer-events:none;z-index:0;}
+  #main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--bg);}
   #main>*{position:relative;z-index:1;}
   .logo{font-family:'DM Mono',monospace;font-size:19px;font-weight:500;color:var(--accent);padding:0 22px 20px;letter-spacing:-0.5px;}
   .nav-section{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:14px 22px 6px;text-transform:uppercase;letter-spacing:0.1em;}
@@ -696,7 +697,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v16.1 · 2026-06-10 18:00';
+var APP_BUILD = 'v16.3 · 2026-06-10 18:10';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1619,7 +1620,7 @@ function renderDashboard(){
   var sd=daysArr.sort();
   var labels=sd.map(function(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CH',{month:'short',day:'numeric'});});
   Object.values(chartInstances).forEach(function(c){c.destroy();});chartInstances={};
-  var baseCd={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161614',titleColor:'#a3a198',bodyColor:'#edebe3',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:10,padding:10,titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:11},displayColors:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}}}};
+  baseCd={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161614',titleColor:'#a3a198',bodyColor:'#edebe3',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:10,padding:10,titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:11},displayColors:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}}}};
   var cd=baseCd;drilldownDates=sd;  chartsEl.innerHTML='<div class="chart-card" style="margin-bottom:16px"><div class="chart-title">calories vs target</div><div class="chart-wrap"><canvas id="chart-cals"></canvas></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">weight (kg)</div><div class="chart-wrap"><canvas id="chart-weight"></canvas></div></div><div class="chart-card"><div class="chart-title">hydration (L) — target '+(waterTargetDash/1000).toFixed(1)+'L</div><div class="chart-wrap"><canvas id="chart-water"></canvas></div></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">protein (g)</div><div class="chart-wrap"><canvas id="chart-protein"></canvas></div></div><div class="chart-card"><div class="chart-title">carbs & fat (g)</div><div class="chart-wrap"><canvas id="chart-macros"></canvas></div></div></div>'
@@ -2005,6 +2006,7 @@ function renderSubstCalendar(){
 
 // ── Dashboard drill-down ─────────────────────────────────────────
 var drilldownDates=[]; // set during renderDashboard
+var baseCd={}; // set during renderDashboard
 function chartOptsWithDrill(metric){
   return Object.assign({},JSON.parse(JSON.stringify(baseCd)),{onClick:function(evt,elems){
     if(!elems.length||elems[0].datasetIndex!==0)return;
