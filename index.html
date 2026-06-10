@@ -67,7 +67,7 @@
   .setup-note{font-size:11px;color:var(--text3);margin-top:14px;text-align:center;}
   .setup-note u{cursor:pointer;}
   /* ── Pages ── */
-  .page{display:none;flex:1;overflow-y:auto;padding:30px 36px 44px;}
+  .page{display:none;flex:1;overflow-y:auto;padding:30px 36px 40px;min-height:0;}
   .page.active{display:block;animation:pagein .28s var(--ease);}
   .page>*{max-width:1060px;margin-left:auto;margin-right:auto;}
   @keyframes pagein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
@@ -454,8 +454,14 @@
       <div id="health-list"></div>
     </div>
 
-    <!-- DAILY (supplements + substances) -->
+    <!-- DAILY (goals + supplements + substances) -->
     <div id="page-supplements" class="page">
+      <div class="page-header">
+        <div class="page-title">today's goals</div>
+        <div id="goals-score" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);"></div>
+      </div>
+      <div id="daily-goals" class="supp-checklist" style="margin-bottom:28px;"></div>
+
       <div class="page-header">
         <div class="page-title">supplements</div>
         <button class="btn-save" onclick="toggleSuppForm()" id="supp-add-btn">+ add</button>
@@ -690,7 +696,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v16 · 2026-06-10 16:30';
+var APP_BUILD = 'v16.1 · 2026-06-10 18:00';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -981,12 +987,14 @@ function updateNutrientBars() {
   if(kcalEl) kcalEl.innerHTML='<span style="color:'+(t.calories>target?'var(--red)':t.calories>target*0.85?'var(--accent)':'var(--text2)')+'">'+Math.round(t.calories)+'</span> / '+target+' kcal';
 
   var bars=[
+    {key:'_label_fuel',label:'fuel',isLabel:true},
     {key:'calories',label:'kcal',color:'var(--accent)'},
     {key:'protein',label:'protein',color:'var(--blue)'},
     {key:'carbs',label:'carbs',color:'var(--amber)'},
-    {key:'fat',label:'fat',color:'#f08060'},
-    {key:'sugar',label:'sugar',color:'var(--red)',over_bad:true},
     {key:'fibre',label:'fibre',color:'var(--teal)'},
+    {key:'_label_limit',label:'limit',isLabel:true},
+    {key:'fat',label:'fat',color:'#f08060',over_bad:true},
+    {key:'sugar',label:'sugar',color:'var(--red)',over_bad:true},
     {key:'sodium',label:'sodium',color:'#a0a0c0',over_bad:true},
     {key:'caffeine',label:'caffeine',color:'var(--purple)',over_bad:true}
   ];
@@ -995,6 +1003,13 @@ function updateNutrientBars() {
   if(!barsEl)return;
   barsEl.innerHTML='';
   bars.forEach(function(b){
+    if(b.isLabel){
+      var lbl=document.createElement('div');
+      lbl.style.cssText='grid-column:1/-1;font-family:DM Mono,monospace;font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;padding:4px 0 2px;opacity:0.7;';
+      lbl.textContent=b.label;
+      barsEl.appendChild(lbl);
+      return;
+    }
     var val=Math.round((t[b.key]||0)*10)/10;
     var tgt=TARGETS[b.key];
     var pct=Math.min(tgt>0?Math.round((val/tgt)*100):0,100);
@@ -1702,6 +1717,49 @@ async function exportData(){var blob=new Blob([JSON.stringify({entries,activitie
 async function clearAllData(){if(!await showConfirm('Delete ALL your data? This cannot be undone.'))return;if(supabaseClient)await Promise.all([supabaseClient.from('entries').delete().eq('user_id',currentUser.id),supabaseClient.from('activities').delete().eq('user_id',currentUser.id),supabaseClient.from('health_events').delete().eq('user_id',currentUser.id)]);entries=[];activities=[];healthEvents=[];updateNutrientBars();showToast('cleared');}
 
 // ── Nav ───────────────────────────────────────────────────────────
+// ── Daily Goals (auto-detected) ──────────────────────────────────
+function renderDailyGoals(){
+  var el=document.getElementById('daily-goals');
+  var scoreEl=document.getElementById('goals-score');
+  if(!el)return;
+  var today=todayStr();
+  // Auto-detect goals
+  var goals=[];
+  // 1. Supplements
+  if(suppTypes.length>0){
+    var allTaken=suppTypes.every(function(st){return suppLogs.some(function(l){return l.supplement_id===st.id&&l.date===today;});});
+    var takenCount=suppTypes.filter(function(st){return suppLogs.some(function(l){return l.supplement_id===st.id&&l.date===today;});}).length;
+    goals.push({name:'Take supplements',done:allTaken,detail:takenCount+'/'+suppTypes.length,icon:'💊',color:'var(--accent)'});
+  }
+  // 2. Weight logged
+  var weightDone=weights.some(function(w){return w.date===today;});
+  goals.push({name:'Log weight',done:weightDone,detail:weightDone?'done':'not yet',icon:'⚖️',color:'var(--blue)'});
+  // 3. Activity
+  var actDone=activities.some(function(a){return a.date===today;});
+  goals.push({name:'Exercise',done:actDone,detail:actDone?'done':'not yet',icon:'🏃',color:'var(--teal)'});
+  // 4. Hydration
+  var todayHydration=entries.filter(function(e){return e.date===today;}).reduce(function(s,e){return s+getHydrationMl(e);},0);
+  var waterTarget=calcWaterTarget(userProfile,activities.some(function(a){return a.date===today;}));
+  var hydDone=todayHydration>=waterTarget;
+  goals.push({name:'Hydration target',done:hydDone,detail:Math.round(todayHydration/100)/10+'L / '+(waterTarget/1000).toFixed(1)+'L',icon:'💧',color:'var(--water)'});
+  // 5. Log food
+  var foodDone=entries.some(function(e){return e.date===today&&e.meal!=='water';});
+  goals.push({name:'Log food',done:foodDone,detail:foodDone?'done':'not yet',icon:'🍽️',color:'var(--amber)'});
+
+  var doneCount=goals.filter(function(g){return g.done;}).length;
+  if(scoreEl)scoreEl.textContent=doneCount+'/'+goals.length+' complete';
+
+  var html='';
+  goals.forEach(function(g){
+    html+='<div class="supp-row'+(g.done?' taken':'')+'" style="cursor:default;">'
+      +'<div class="supp-check">'+(g.done?'✓':'')+'</div>'
+      +'<div style="font-size:16px;flex-shrink:0;">'+g.icon+'</div>'
+      +'<div class="supp-info"><div class="supp-name">'+g.name+'</div>'
+      +'<div class="supp-dose-label">'+g.detail+'</div></div></div>';
+  });
+  el.innerHTML=html;
+}
+
 // ── Supplements ───────────────────────────────────────────────────
 var SUPP_COLORS=['#c9f25f','#f2b04a','#6fb6f5','#c685f2','#4fd6b8','#ff7a76','#67d6f0','#67d695'];
 function suppColor(idx){return SUPP_COLORS[idx%SUPP_COLORS.length];}
@@ -1994,7 +2052,7 @@ function showPage(name){
     if(name==='health')renderHealth();
     if(name==='dashboard')renderDashboard();
     if(name==='suggestions')loadSuggestions();
-    if(name==='supplements'){renderSupplements();renderSubstances();}
+    if(name==='supplements'){renderDailyGoals();renderSupplements();renderSubstances();}
   }
 }
 
