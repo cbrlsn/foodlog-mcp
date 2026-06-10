@@ -648,7 +648,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v15.5 · 2026-06-10 15:30';
+var APP_BUILD = 'v15.6 · 2026-06-10 15:50';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1814,30 +1814,29 @@ function showPage(name){
 }
 
 // ── Utils ─────────────────────────────────────────────────────────
-// Bottle slosh — gyroscope + liquid physics
+// Bottle slosh — gyroscope liquid physics (tilt-dominant)
 var sloshTarget=0,sloshRunning=false;
-var waterSim={angle:0,vel:0,amp:0,phase:0,prevGamma:0};
+var waterSim={angle:0,vel:0,ripple:0,phase:0,prevTarget:0};
 
-function onDeviceSlosh(e){sloshTarget=Math.max(-40,Math.min(40,(e.gamma||0)));}
+function onDeviceSlosh(e){sloshTarget=(e.gamma||0);}
 
 function updateWaterPhysics(){
   var w=waterSim;
-  var gammaChange=sloshTarget-w.prevGamma;
-  w.prevGamma=sloshTarget;
-  // water angle follows tilt with spring physics
-  var targetAngle=sloshTarget*0.4;
-  var force=(targetAngle-w.angle)*0.04;
+  // spring physics: water angle chases gravity with momentum
+  var gravity=sloshTarget*0.6; // how far the water tilts (degrees)
+  var force=(gravity-w.angle)*0.035;
   w.vel+=force;
-  w.vel*=0.92; // damping
+  w.vel*=0.88; // damping — lower = more sloshy
   w.angle+=w.vel;
-  w.angle=Math.max(-20,Math.min(20,w.angle));
-  // wave amplitude from disturbance
-  w.amp+=Math.abs(gammaChange)*0.15+Math.abs(w.vel)*0.3;
-  w.amp*=0.93;
-  w.amp=Math.min(w.amp,7);
-  // always keep a tiny idle ripple
-  w.amp=Math.max(w.amp,0.6);
-  w.phase+=0.12+w.amp*0.02;
+  w.angle=Math.max(-25,Math.min(25,w.angle));
+  // ripple from disturbance (secondary effect)
+  var disturbance=Math.abs(sloshTarget-w.prevTarget);
+  w.prevTarget=sloshTarget;
+  w.ripple+=disturbance*0.08;
+  w.ripple*=0.92;
+  w.ripple=Math.min(w.ripple,3);
+  w.ripple=Math.max(w.ripple,0.3); // idle micro-ripple
+  w.phase+=0.1;
 }
 
 function renderWaterSVGs(){
@@ -1845,24 +1844,27 @@ function renderWaterSVGs(){
   var paths=document.querySelectorAll('.water-path');
   paths.forEach(function(path){
     var pct=parseFloat(path.getAttribute('data-pct'))||0;
-    if(pct<=0)return;
+    if(pct<=0){path.setAttribute('d','');return;}
     var bw=24,bh=34;
     var waterH=bh*(pct/100);
     var baseY=bh-waterH;
-    // build wavy top surface
+    // tilt: water rises on one side, drops on the other
+    var tiltPx=w.angle*0.25; // pixels of rise/drop per side
+    var leftY=baseY+tiltPx;
+    var rightY=baseY-tiltPx;
+    // clamp so water doesn't go above bottle or below bottom
+    leftY=Math.max(1,Math.min(bh-1,leftY));
+    rightY=Math.max(1,Math.min(bh-1,rightY));
+    // build path with subtle ripple on the surface
     var pts=[];
     for(var x=0;x<=bw;x+=1){
-      var nx=(x/bw)*2-1; // -1 to 1
-      var tilt=w.angle*0.15*nx;
-      var wave1=Math.sin(x*0.5+w.phase)*w.amp;
-      var wave2=Math.sin(x*0.8+w.phase*1.4)*w.amp*0.4;
-      var wave3=Math.sin(x*0.25+w.phase*0.7)*w.amp*0.3;
-      var y=baseY+tilt+wave1+wave2+wave3;
-      y=Math.max(0,Math.min(bh,y));
-      pts.push(x.toFixed(1)+','+y.toFixed(1));
+      var t=x/bw; // 0 to 1
+      var baseLevel=leftY+(rightY-leftY)*t; // linear tilt
+      var ripple=Math.sin(x*0.7+w.phase)*w.ripple+Math.sin(x*1.2+w.phase*1.6)*w.ripple*0.4;
+      var y=Math.max(0,Math.min(bh,baseLevel+ripple));
+      pts.push(x+','+y.toFixed(1));
     }
-    var d='M0,'+bh+' L'+pts.join(' L')+' L'+bw+','+bh+' Z';
-    path.setAttribute('d',d);
+    path.setAttribute('d','M0,'+bh+' L'+pts.join(' L')+' L'+bw+','+bh+' Z');
   });
 }
 
