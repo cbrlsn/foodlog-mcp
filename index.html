@@ -373,7 +373,7 @@
         <div class="nutrient-bars" id="nutrient-bars"></div>
       <div id="water-bar-row">
         <div class="water-row-head">
-          <span class="water-label">water</span>
+          <span class="water-label">hydration</span>
           <span id="water-summary">0 / 0 ml</span>
         </div>
         <div id="water-bottles"></div>
@@ -584,7 +584,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v14 · 2026-06-10 00:30';
+var APP_BUILD = 'v14.1 · 2026-06-10 09:00';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -614,11 +614,19 @@ function calcWaterTarget(profile, hadActivity){
   return hadActivity ? base + 500 : base;
 }
 
+function getHydrationMl(entry){
+  // Water: volume_ml if set, else legacy calories field (which stores ml for water)
+  if(entry.meal==='water') return entry.volume_ml || entry.calories || 0;
+  // Non-alcoholic drinks contribute their volume
+  if(entry.meal==='drink' && !entry.has_alcohol) return entry.volume_ml || 0;
+  return 0;
+}
+
 function renderWaterBottles(){
   var now = new Date();
   var today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-  var totalMl = entries.filter(function(e){ return e.date===today && e.meal==='water'; })
-    .reduce(function(s,e){ return s+(e.calories||0); }, 0);
+  var totalMl = entries.filter(function(e){ return e.date===today; })
+    .reduce(function(s,e){ return s+getHydrationMl(e); }, 0);
   var hadActivity = activities.some(function(a){ return a.date===today; });
   var target = calcWaterTarget(userProfile, hadActivity);
   var el = document.getElementById('water-bottles');
@@ -791,6 +799,7 @@ function normaliseEntry(row) {
     sugar_g:row.sugar||null,fibre_g:row.fibre||null,sodium_mg:row.sodium||null,
     vitamin_c:row.vitamin_c||null,vitamin_d:row.vitamin_d||null,
     iron:row.iron||null,calcium:row.calcium||null,omega3:row.omega3||null,
+    volume_ml:row.volume_ml||null,
     caffeine_mg:row.caffeine_mg||null,
     has_dairy:row.has_dairy||false,has_gluten:row.has_gluten||false,
     is_acidic:row.is_acidic||false,has_alcohol:row.has_alcohol||false,
@@ -808,6 +817,7 @@ async function saveEntryToSupabase(e){
     vitamin_c:e.vitamin_c||null,vitamin_d:e.vitamin_d||null,
     iron:e.iron||null,calcium:e.calcium||null,omega3:e.omega3||null,
     raw_input:e.raw_input||e.items,
+    volume_ml:e.volume_ml||null,
     caffeine_mg:e.caffeine_mg||null,
     has_dairy:e.has_dairy||false,
     has_gluten:e.has_gluten||false,
@@ -975,7 +985,9 @@ async function sendMessage(){
 
   var hadActivityToday = activities.some(function(a){ return a.date===dateStr; });
   var waterTarget = calcWaterTarget(userProfile, hadActivityToday);
-  var waterToday = entries.filter(function(e){ return e.date===dateStr && e.meal==='water'; }).reduce(function(s,e){ return s+(e.calories||0); }, 0);
+  var waterToday = entries.filter(function(e){ return e.date===dateStr && e.meal==='water'; }).reduce(function(s,e){ return s+(e.volume_ml||e.calories||0); }, 0);
+  var drinkHydration = entries.filter(function(e){ return e.date===dateStr && e.meal==='drink' && !e.has_alcohol; }).reduce(function(s,e){ return s+(e.volume_ml||0); }, 0);
+  var totalHydration = waterToday + drinkHydration;
   var recentEntriesContext = entries.filter(function(e){ return e.meal!=='water'; }).slice(0,5).map(function(e){
     return '{"id":"'+e.id+'","meal":"'+e.meal+'","items":"'+e.items+'","date":"'+e.date+'","time":"'+e.time+'","calories":'+e.calories+'}';
   }).join(',\n');
@@ -990,7 +1002,7 @@ async function sendMessage(){
 
   var systemPrompt=`You are a personal health assistant for ${userName} (${userSex}, ${userAge}y, ${userWeight}kg, ${userActivity}). Daily targets: ${userConfig.calorieTarget} kcal/day (~${effectiveTarget} today), 130g protein, 280g carbs, 50g fat, 50g sugar max, 30g fibre, 2300mg sodium max.
 
-Today: ${Math.round(t.calories)} kcal eaten, ${Math.round(t.protein||0)}g protein. Water: ${waterToday}ml / ${waterTarget}ml target. Food: ${todaySummary||'nothing'}. Activity: ${actSummary||'none'}. Health: ${healthSummary||'none'}. Time: ${timeStr}, date: ${dateStr}.
+Today: ${Math.round(t.calories)} kcal eaten, ${Math.round(t.protein||0)}g protein. Hydration: ${totalHydration}ml / ${waterTarget}ml target (${waterToday}ml water + ${drinkHydration}ml from drinks). Food: ${todaySummary||'nothing'}. Activity: ${actSummary||'none'}. Health: ${healthSummary||'none'}. Time: ${timeStr}, date: ${dateStr}.
 
 Recent entries (for edits/corrections):
 [${recentEntriesContext}]
@@ -999,6 +1011,7 @@ RULES:
 - If user mentions a time ("at 8am", "this morning"), use it as entry_time (HH:MM 24h). "Yesterday" = ${yesterdayStr}.
 - For complex meals with many items, log as ONE entry with a combined description. Do NOT split into multiple entries unless the user clearly describes separate meals.
 - WATER: meal="water" is ONLY for plain water (tap, still, sparkling). Store the ml amount in the calories field and set ALL other nutrient fields to 0. Estimate ml: glass=250ml, small bottle=330ml, bottle=500ml, large bottle=750ml, 1L bottle=1000ml. Any other liquid (juice, soda, mate, coffee, milk) is meal="drink" with real kcal.
+- VOLUME: For ALL drink and water entries, always set "volume_ml" to the estimated volume in millilitres. Standard sizes: can=330ml, small bottle=330ml, bottle=500ml, large bottle=750ml, glass=250ml, mug=300ml, cup=200ml. Non-alcoholic drinks count toward hydration tracking.
 - WEIGHT: If the user mentions their body weight ("weighed 63.8 today", "I'm 64kg"), set "weight_kg" to that number. Do NOT create a food entry for it.
 - INGREDIENT FLAGS: For every food entry, auto-tag these fields based on ingredients:
   * caffeine_mg: estimate mg of caffeine (espresso~63mg, drip coffee~95mg, red bull~80mg, mate~30mg, tea~30mg, 0 if none)
@@ -1015,7 +1028,7 @@ RULES:
 - CRITICAL: Your entire response must be valid, complete JSON. Never truncate. If in doubt, use null for nutrients rather than guessing.
 
 Respond ONLY in this exact JSON format, nothing else:
-{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"reply":"string","suggestion":"string|null"}
+{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"reply":"string","suggestion":"string|null"}
 Only populate arrays for what was actually mentioned. Empty arrays [] for the rest.`;
 
   try {
@@ -1053,6 +1066,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
         }
         // Water entries: calories field holds ml, every macro must be zero
         if(e.meal==='water'){
+          if(!e.volume_ml) e.volume_ml = e.calories || 0; // backfill volume_ml from calories
           e.protein_g=0;e.carbs_g=0;e.fat_g=0;e.sugar_g=0;e.fibre_g=0;e.sodium_mg=0;
           e.caffeine_mg=0;e.has_dairy=false;e.has_gluten=false;e.is_acidic=false;
           e.has_alcohol=false;e.has_nicotine=false;e.has_cannabis=false;
@@ -1073,6 +1087,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
           sugar_g:e.sugar_g||null,fibre_g:e.fibre_g||null,sodium_mg:e.sodium_mg||null,
           vitamin_c:e.vitamin_c||null,vitamin_d:e.vitamin_d||null,
           iron:e.iron||null,calcium:e.calcium||null,omega3:e.omega3||null,raw_input:text,
+          volume_ml:e.volume_ml||null,
           caffeine_mg:e.caffeine_mg||null,
           has_dairy:e.has_dairy||false,has_gluten:e.has_gluten||false,
           is_acidic:e.is_acidic||false,has_alcohol:e.has_alcohol||false,
@@ -1098,7 +1113,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
         if(errE){console.error('Insert error:',JSON.stringify(errE));setSyncStatus('error','● save failed: '+errE.message);}
         if(savedE)localE.id=savedE.id;
         entries.unshift(localE);
-        var chipAmount = e.meal==='water' ? (e.calories?' · '+e.calories+'ml':'') : (e.calories?' · ~'+e.calories+'kcal':'');
+        var chipAmount = e.meal==='water' ? (e.volume_ml||e.calories?' · '+(e.volume_ml||e.calories)+'ml':'') : (e.meal==='drink'?(e.calories?' · ~'+e.calories+'kcal':'')+(e.volume_ml?' · '+e.volume_ml+'ml':''):(e.calories?' · ~'+e.calories+'kcal':''));
         chips.push({text:e.items+chipAmount,type:'food',meal:e.meal});
       }
     }
@@ -1233,7 +1248,7 @@ function renderHistory(){
     de.forEach(function(e){
       var row=document.createElement('div');row.className='hist-entry';
       row.onclick=function(){openEntryModal(e);};
-      var calStr = e.meal==='water' ? (e.calories?e.calories+'ml':'') : (e.calories?'~'+e.calories+'kcal':'');
+      var calStr = e.meal==='water' ? ((e.volume_ml||e.calories)?(e.volume_ml||e.calories)+'ml':'') : e.meal==='drink' ? (e.calories?'~'+e.calories+'kcal':'')+(e.volume_ml?' · '+e.volume_ml+'ml':'') : (e.calories?'~'+e.calories+'kcal':'');
       row.innerHTML='<div class="hist-time">'+(e.time||'')+'</div><div class="hist-meal-badge badge-'+(e.meal||'other')+'">'+(e.meal||'other')+'</div>'
         +'<div class="hist-content"><div class="hist-items">'+e.items+'</div>'+(e.note?'<div class="hist-note">'+e.note+'</div>':'')+'</div>'
         +'<div class="hist-cals">'+calStr+'</div>'
@@ -1258,7 +1273,8 @@ function openEntryModal(entry){
   document.getElementById('modal-title').textContent=entry.items;
   var nutsEl=document.getElementById('modal-nutrients');
   if(entry.meal==='water'){
-    nutsEl.innerHTML='<div class="modal-nut" style="grid-column:1/-1"><div class="modal-nut-label">Volume</div><div class="modal-nut-val">'+(entry.calories!=null?entry.calories:'—')+'<span class="modal-nut-unit"> ml</span></div></div>';
+    var vol=entry.volume_ml||entry.calories||0;
+    nutsEl.innerHTML='<div class="modal-nut" style="grid-column:1/-1"><div class="modal-nut-label">Volume</div><div class="modal-nut-val">'+(vol||'—')+'<span class="modal-nut-unit"> ml</span></div></div>';
     document.getElementById('modal-ai-comment').textContent='Plain water — hydration only, no calories.';
     document.getElementById('entry-modal').classList.add('open');
     return;
@@ -1270,14 +1286,17 @@ function openEntryModal(entry){
     {label:'Fat',val:entry.fat_g,unit:'g'},
     {label:'Sugar',val:entry.sugar_g,unit:'g'},
     {label:'Fibre',val:entry.fibre_g,unit:'g'},
-    {label:'Sodium',val:entry.sodium_mg,unit:'mg'},
+    {label:'Sodium',val:entry.sodium_mg,unit:'mg'}
+  ];
+  if(entry.meal==='drink'&&entry.volume_ml)nuts.splice(1,0,{label:'Volume',val:entry.volume_ml,unit:'ml'});
+  nuts.push(
     {label:'Vit C',val:entry.vitamin_c,unit:'mg'},
     {label:'Vit D',val:entry.vitamin_d,unit:'µg'},
     {label:'Iron',val:entry.iron,unit:'mg'},
     {label:'Calcium',val:entry.calcium,unit:'mg'},
     {label:'Caffeine',val:entry.caffeine_mg,unit:'mg'},
     {label:'Omega-3',val:entry.omega3,unit:'g'}
-  ];
+  );
   nutsEl.innerHTML=nuts.map(function(n){
     return '<div class="modal-nut"><div class="modal-nut-label">'+n.label+'</div><div class="modal-nut-val">'+(n.val!=null?n.val:'—')+'<span class="modal-nut-unit"> '+(n.val!=null?n.unit:'')+'</span></div></div>';
   }).join('');
@@ -1435,8 +1454,9 @@ function renderDashboard(){
   var byDay={};
   filtered.forEach(function(e){
     if(!byDay[e.date])byDay[e.date]={cals:0,protein:0,carbs:0,fat:0,sugar:0,fibre:0,water:0};
+    // hydration tracking: water + non-alcohol drinks by volume
+    byDay[e.date].water+=getHydrationMl(e);
     if(e.meal==='water'){
-      byDay[e.date].water+=e.calories||0; // ml stored in calories field for water
       return; // water never counts toward kcal or macros
     }
     byDay[e.date].cals+=e.calories||0;byDay[e.date].protein+=e.protein_g||0;
@@ -1456,7 +1476,7 @@ function renderDashboard(){
   var actFiltered=activities.filter(function(a){return a.date>=cutoff;});
   statsEl.innerHTML='<div class="stat-card"><div class="stat-label">avg daily kcal</div><div class="stat-value '+(Math.abs(avgCals-target)<150?'good':Math.abs(avgCals-target)<300?'warn':'bad')+'">'+avgCals+'</div><div class="stat-sub">target: '+target+'</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:'+Math.min(100,Math.round(avgCals/target*100))+'%;background:var(--accent)"></div></div></div>'
     +'<div class="stat-card"><div class="stat-label">avg protein</div><div class="stat-value '+(avgProt>110?'good':avgProt>80?'warn':'bad')+'">'+avgProt+'g</div><div class="stat-sub">target: 130g</div></div>'
-    +'<div class="stat-card"><div class="stat-label">avg water</div><div class="stat-value '+(avgWater>=waterTargetDash?'good':avgWater>=waterTargetDash*0.7?'warn':'bad')+'" style="white-space:nowrap">'+(avgWater>=1000?(avgWater/1000).toFixed(1)+'<span style="font-size:14px;color:var(--text3)"> L</span>':avgWater+'<span style="font-size:14px;color:var(--text3)"> ml</span>')+'</div><div class="stat-sub">target: '+(waterTargetDash/1000).toFixed(1)+'L+</div></div>'
+    +'<div class="stat-card"><div class="stat-label">avg hydration</div><div class="stat-value '+(avgWater>=waterTargetDash?'good':avgWater>=waterTargetDash*0.7?'warn':'bad')+'" style="white-space:nowrap">'+(avgWater>=1000?(avgWater/1000).toFixed(1)+'<span style="font-size:14px;color:var(--text3)"> L</span>':avgWater+'<span style="font-size:14px;color:var(--text3)"> ml</span>')+'</div><div class="stat-sub">target: '+(waterTargetDash/1000).toFixed(1)+'L+</div></div>'
     +'<div class="stat-card"><div class="stat-label">days logged</div><div class="stat-value">'+daysArr.length+'</div><div class="stat-sub">of '+days+' days</div></div>'
     +'<div class="stat-card"><div class="stat-label">activity sessions</div><div class="stat-value">'+actFiltered.length+'</div><div class="stat-sub">last '+days+'d</div></div>';
   var sd=daysArr.sort();
@@ -1464,7 +1484,7 @@ function renderDashboard(){
   Object.values(chartInstances).forEach(function(c){c.destroy();});chartInstances={};
   var cd={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161614',titleColor:'#a3a198',bodyColor:'#edebe3',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:10,padding:10,titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:11},displayColors:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}}}};
   chartsEl.innerHTML='<div class="chart-card" style="margin-bottom:16px"><div class="chart-title">calories vs target</div><div class="chart-wrap"><canvas id="chart-cals"></canvas></div></div>'
-    +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">weight (kg)</div><div class="chart-wrap"><canvas id="chart-weight"></canvas></div></div><div class="chart-card"><div class="chart-title">water (L) — target '+(waterTargetDash/1000).toFixed(1)+'L</div><div class="chart-wrap"><canvas id="chart-water"></canvas></div></div></div>'
+    +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">weight (kg)</div><div class="chart-wrap"><canvas id="chart-weight"></canvas></div></div><div class="chart-card"><div class="chart-title">hydration (L) — target '+(waterTargetDash/1000).toFixed(1)+'L</div><div class="chart-wrap"><canvas id="chart-water"></canvas></div></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">protein (g)</div><div class="chart-wrap"><canvas id="chart-protein"></canvas></div></div><div class="chart-card"><div class="chart-title">carbs & fat (g)</div><div class="chart-wrap"><canvas id="chart-macros"></canvas></div></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">sugar (g) — max 50g</div><div class="chart-wrap"><canvas id="chart-sugar"></canvas></div></div><div class="chart-card"><div class="chart-title">fibre (g) — target 30g</div><div class="chart-wrap"><canvas id="chart-fibre"></canvas></div></div></div>';
   // weight chart: spans the full range (not just food-logged days), connects gaps
