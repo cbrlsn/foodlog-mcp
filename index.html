@@ -107,10 +107,13 @@
   #water-bottles{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
   .bottle{display:flex;flex-direction:column;align-items:center;gap:4px;}
   .bottle-cap{width:10px;height:4px;border-radius:3px 3px 0 0;background:rgba(255,255,255,0.12);}
-  .bottle-body{width:24px;height:34px;border-radius:7px;border:1.5px solid var(--border2);background:rgba(255,255,255,0.02);overflow:hidden;display:flex;align-items:flex-end;transition:border-color .4s var(--ease);}
-  .bottle-fill{width:100%;background:linear-gradient(180deg,rgba(108,184,255,0.45),rgba(108,184,255,0.85));transition:height .7s var(--ease);border-radius:0 0 5px 5px;}
+  .bottle-body{width:24px;height:34px;border-radius:7px;border:1.5px solid var(--border2);background:rgba(255,255,255,0.02);overflow:hidden;display:flex;align-items:flex-end;justify-content:center;transition:border-color .4s var(--ease);}
+  .bottle-fill{width:200%;background:linear-gradient(180deg,rgba(108,184,255,0.45),rgba(108,184,255,0.85));transition:height .7s var(--ease);border-radius:0 0 5px 5px;transform-origin:center center;position:relative;}
+  .bottle-fill::after{content:'';position:absolute;top:-3px;left:-10%;right:-10%;height:6px;background:rgba(108,184,255,0.7);border-radius:50%;animation:bottle-wave 3s ease-in-out infinite;}
+  @keyframes bottle-wave{0%,100%{transform:translateX(-3%) scaleY(1);}50%{transform:translateX(3%) scaleY(0.5);}}
   .bottle.full .bottle-body{border-color:rgba(108,184,255,0.5);}
   .bottle.full .bottle-fill{background:linear-gradient(180deg,rgba(108,184,255,0.6),rgba(108,184,255,0.95));}
+  .bottle.full .bottle-fill::after{background:rgba(108,184,255,0.9);}
   .bottle-pct{font-size:8px;color:var(--text3);font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums;}
   /* ── Chat ── */
   #chat-messages{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px;width:100%;max-width:860px;margin:0 auto;}
@@ -414,7 +417,7 @@
           <div class="panel-arrow">▼</div>
         </div>
         <div class="nutrient-bars" id="nutrient-bars"></div>
-      <div id="water-bar-row">
+      <div id="water-bar-row" onclick="initSlosh()">
         <div class="water-row-head">
           <span class="water-label">hydration</span>
           <span id="water-summary">0 / 0 ml</span>
@@ -649,7 +652,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v15.2 · 2026-06-10 14:55';
+var APP_BUILD = 'v15.3 · 2026-06-10 15:05';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1810,11 +1813,33 @@ function showPage(name){
 }
 
 // ── Utils ─────────────────────────────────────────────────────────
+// Bottle slosh — gyroscope-driven water tilt
+var sloshAngle=0,sloshTarget=0,sloshRunning=false;
+function onDeviceSlosh(e){sloshTarget=Math.max(-14,Math.min(14,(e.gamma||0)*0.35));}
+function sloshLoop(){
+  sloshAngle+=(sloshTarget-sloshAngle)*0.07;
+  var fills=document.querySelectorAll('.bottle-fill');
+  if(fills.length){fills.forEach(function(el){el.style.transform='rotate('+sloshAngle.toFixed(1)+'deg)';});}
+  requestAnimationFrame(sloshLoop);
+}
+function initSlosh(){
+  if(sloshRunning)return;
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(function(state){
+      if(state==='granted'){window.addEventListener('deviceorientation',onDeviceSlosh);sloshRunning=true;sloshLoop();}
+    }).catch(function(){});
+  } else if('DeviceOrientationEvent' in window){
+    window.addEventListener('deviceorientation',onDeviceSlosh);
+    sloshRunning=true;sloshLoop();
+  }
+}
+
 function fmtDate(d){var today=new Date().toISOString().slice(0,10),yest=new Date(Date.now()-86400000).toISOString().slice(0,10);if(d===today)return'today';if(d===yest)return'yesterday';return new Date(d+'T12:00:00').toLocaleDateString('en-CH',{weekday:'short',month:'short',day:'numeric'});}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);}
 
 document.addEventListener('DOMContentLoaded',function(){
   init();
+  initSlosh(); // auto-start on non-iOS; iOS requires user gesture (tap hydration section)
   var inp=document.getElementById('chat-input');
   inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
   inp.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
