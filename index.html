@@ -255,6 +255,48 @@
   .suggest-refresh{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
   .suggest-context{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 17px;margin-bottom:20px;font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.6;box-shadow:var(--card-hl);}
   .suggest-loading{text-align:center;padding:48px;color:var(--text3);font-size:13px;font-family:'DM Mono',monospace;}
+  /* ── Supplements ── */
+  .supp-today{margin-bottom:28px;}
+  .supp-checklist{display:flex;flex-direction:column;gap:6px;}
+  .supp-row{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;cursor:pointer;transition:all .15s var(--ease);box-shadow:var(--card-hl);}
+  .supp-row:hover{border-color:var(--border2);}
+  .supp-row.taken{opacity:0.55;}
+  .supp-row.taken .supp-check{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+  .supp-check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all .15s var(--ease);background:transparent;color:transparent;}
+  .supp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .supp-info{flex:1;min-width:0;}
+  .supp-name{font-size:13px;font-weight:500;}
+  .supp-dose-label{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:1px;}
+  .supp-dose-ctrl{display:flex;align-items:center;gap:6px;}
+  .supp-dose-btn{width:26px;height:26px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;font-family:'DM Mono',monospace;}
+  .supp-dose-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .supp-dose-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);min-width:36px;text-align:center;}
+  .supp-actions{display:flex;gap:6px;align-items:center;}
+  .supp-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:4px 6px;border-radius:5px;opacity:0;transition:all .12s;}
+  .supp-row:hover .supp-del{opacity:1;}
+  .supp-del:hover{color:var(--red);background:rgba(255,122,118,0.1);}
+  .supp-add-form{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:10px;display:none;animation:pagein .2s var(--ease);}
+  .supp-add-form.open{display:block;}
+  .supp-add-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
+  .supp-add-row .field{flex:1;min-width:100px;}
+  .supp-add-row label{display:block;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+  .supp-add-row input,.supp-add-row select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 10px;outline:none;transition:border-color .15s;}
+  .supp-add-row input:focus,.supp-add-row select:focus{border-color:var(--accent);}
+  .supp-calendar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--card-hl);}
+  .supp-cal-title{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;}
+  .supp-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .supp-cal-head{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);text-align:center;padding:0 0 6px;text-transform:uppercase;}
+  .supp-cal-day{aspect-ratio:1;border-radius:8px;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;transition:background .12s;min-height:38px;}
+  .supp-cal-day.today{border:1px solid var(--accent);background:var(--accent-dim);}
+  .supp-cal-day.future{opacity:0.25;}
+  .supp-cal-day.complete{background:rgba(201,242,95,0.06);}
+  .supp-cal-day.empty{background:transparent;}
+  .supp-cal-num{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);}
+  .supp-cal-dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;}
+  .supp-cal-dot{width:6px;height:6px;border-radius:50%;opacity:0.2;}
+  .supp-cal-dot.taken{opacity:1;}
+  .supp-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;}
+  .supp-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;}
   /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}
@@ -341,6 +383,7 @@
     <div class="nav-item" onclick="showPage('history')" id="nav-history"><span class="nav-icon">≡</span> food</div>
     <div class="nav-item" onclick="showPage('activity')" id="nav-activity"><span class="nav-icon">◈</span> activity</div>
     <div class="nav-item" onclick="showPage('health')" id="nav-health"><span class="nav-icon">♡</span> health</div>
+    <div class="nav-item" onclick="showPage('supplements')" id="nav-supplements"><span class="nav-icon">◉</span> supps</div>
     <div class="nav-item" onclick="showPage('suggestions')" id="nav-suggestions"><span class="nav-icon">✦</span> suggest</div>
     <div class="nav-item" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">◎</span> dashboard</div>
     <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙</span> settings</div>
@@ -410,6 +453,28 @@
       <div class="page-header"><div class="page-title">health log</div><div class="page-sub" id="health-count">0 events</div></div>
       <div class="health-summary" id="health-summary"></div>
       <div id="health-list"></div>
+    </div>
+
+    <!-- SUPPLEMENTS -->
+    <div id="page-supplements" class="page">
+      <div class="page-header">
+        <div class="page-title">supplements</div>
+        <button class="btn-save" onclick="toggleSuppForm()" id="supp-add-btn">+ add</button>
+      </div>
+      <div class="supp-add-form" id="supp-add-form">
+        <div class="supp-add-row">
+          <div class="field" style="flex:2"><label>name</label><input id="supp-new-name" placeholder="e.g. Creatine" /></div>
+          <div class="field"><label>dose</label><input id="supp-new-dose" type="number" placeholder="5" min="0" step="0.5" /></div>
+          <div class="field"><label>unit</label>
+            <select id="supp-new-unit"><option value="pills">pills</option><option value="g">g</option><option value="mg">mg</option><option value="ml">ml</option><option value="mcg">mcg</option><option value="IU">IU</option></select>
+          </div>
+          <button class="btn-save" onclick="addSupplement()" style="height:36px;white-space:nowrap;">save</button>
+        </div>
+      </div>
+      <div class="supp-today" id="supp-today">
+        <div class="supp-checklist" id="supp-checklist"></div>
+      </div>
+      <div class="supp-calendar" id="supp-calendar"></div>
     </div>
 
     <!-- SUGGESTIONS -->
@@ -584,7 +649,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v14.2 · 2026-06-10 10:45';
+var APP_BUILD = 'v15 · 2026-06-10 11:15';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -594,7 +659,7 @@ var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 var supabaseClient = null;
 var currentUser = null;
 var userProfile = null; // loaded from Supabase profiles table
-var entries = [], activities = [], healthEvents = [], weights = [];
+var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [];
 var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:70,height:175,age:25,sex:'male',activity:'light',calorieTarget:2000}));
 var isThinking = false, chartInstances = {};
 var panelExpanded = true;
@@ -779,17 +844,21 @@ async function loadAllData() {
   try {
     var cutoff=new Date(Date.now()-90*86400000).toISOString();
     var uid=currentUser.id;
-    var [fe,fa,fh,fw]=await Promise.all([
+    var [fe,fa,fh,fw,fs,fsl]=await Promise.all([
       supabaseClient.from('entries').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('activities').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('health_events').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
-      supabaseClient.from('weight_logs').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:true})
+      supabaseClient.from('weight_logs').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:true}),
+      supabaseClient.from('supplements').select('*').eq('user_id',uid).eq('active',true).order('created_at',{ascending:true}),
+      supabaseClient.from('supplement_logs').select('*').eq('user_id',uid).gte('taken_at',cutoff).order('taken_at',{ascending:true})
     ]);
     if(fe.error)throw fe.error;
     entries=(fe.data||[]).map(normaliseEntry);
     activities=(fa.data||[]).map(normaliseActivity);
     healthEvents=(fh.data||[]).map(normaliseHealth);
     weights=fw.error?[]:(fw.data||[]).map(function(r){var dt=new Date(r.created_at);return{id:r.id,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),weight_kg:r.weight_kg};});
+    suppTypes=fs.error?[]:(fs.data||[]);
+    suppLogs=fsl.error?[]:(fsl.data||[]).map(function(r){var dt=new Date(r.taken_at);return{id:r.id,supplement_id:r.supplement_id,dose:r.dose,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
     setSyncStatus('synced','● connected');
     updateNutrientBars();
   } catch(err){setSyncStatus('error','● error: '+err.message);console.error(err);}
@@ -1582,6 +1651,142 @@ async function exportData(){var blob=new Blob([JSON.stringify({entries,activitie
 async function clearAllData(){if(!await showConfirm('Delete ALL your data? This cannot be undone.'))return;if(supabaseClient)await Promise.all([supabaseClient.from('entries').delete().eq('user_id',currentUser.id),supabaseClient.from('activities').delete().eq('user_id',currentUser.id),supabaseClient.from('health_events').delete().eq('user_id',currentUser.id)]);entries=[];activities=[];healthEvents=[];updateNutrientBars();showToast('cleared');}
 
 // ── Nav ───────────────────────────────────────────────────────────
+// ── Supplements ───────────────────────────────────────────────────
+var SUPP_COLORS=['#c9f25f','#f2b04a','#6fb6f5','#c685f2','#4fd6b8','#ff7a76','#67d6f0','#67d695'];
+function suppColor(idx){return SUPP_COLORS[idx%SUPP_COLORS.length];}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+function toggleSuppForm(){
+  var f=document.getElementById('supp-add-form');
+  f.classList.toggle('open');
+  if(f.classList.contains('open'))document.getElementById('supp-new-name').focus();
+}
+
+async function addSupplement(){
+  var name=document.getElementById('supp-new-name').value.trim();
+  if(!name){showToast('enter a name');return;}
+  var dose=parseFloat(document.getElementById('supp-new-dose').value)||1;
+  var unit=document.getElementById('supp-new-unit').value;
+  var color=suppColor(suppTypes.length);
+  var {data,error}=await supabaseClient.from('supplements').insert({user_id:currentUser.id,name:name,default_dose:dose,unit:unit,color:color,active:true}).select().single();
+  if(error){showToast('save failed');console.error(error);return;}
+  suppTypes.push(data);
+  document.getElementById('supp-new-name').value='';
+  document.getElementById('supp-new-dose').value='';
+  document.getElementById('supp-add-form').classList.remove('open');
+  renderSupplements();
+  showToast('added '+name);
+}
+
+async function deleteSupplement(id){
+  if(!confirm('Remove this supplement?'))return;
+  await supabaseClient.from('supplements').update({active:false}).eq('id',id);
+  suppTypes=suppTypes.filter(function(s){return s.id!==id;});
+  renderSupplements();
+}
+
+async function toggleSuppTaken(suppId,dose){
+  var today=todayStr();
+  var existing=suppLogs.find(function(l){return l.supplement_id===suppId&&l.date===today;});
+  if(existing){
+    await supabaseClient.from('supplement_logs').delete().eq('id',existing.id);
+    suppLogs=suppLogs.filter(function(l){return l.id!==existing.id;});
+  } else {
+    var {data,error}=await supabaseClient.from('supplement_logs').insert({user_id:currentUser.id,supplement_id:suppId,dose:dose,taken_at:new Date().toISOString()}).select().single();
+    if(error){showToast('log failed');console.error(error);return;}
+    suppLogs.push({id:data.id,supplement_id:suppId,dose:dose,date:today});
+  }
+  renderSupplements();
+}
+
+async function adjustSuppDose(suppId,delta,event){
+  event.stopPropagation();
+  var today=todayStr();
+  var existing=suppLogs.find(function(l){return l.supplement_id===suppId&&l.date===today;});
+  var st=suppTypes.find(function(s){return s.id===suppId;});
+  if(existing){
+    var newDose=Math.max(0,existing.dose+delta);
+    await supabaseClient.from('supplement_logs').update({dose:newDose}).eq('id',existing.id);
+    existing.dose=newDose;
+  } else {
+    var baseDose=st?st.default_dose:1;
+    var newDose=Math.max(0,baseDose+delta);
+    var {data,error}=await supabaseClient.from('supplement_logs').insert({user_id:currentUser.id,supplement_id:suppId,dose:newDose,taken_at:new Date().toISOString()}).select().single();
+    if(!error)suppLogs.push({id:data.id,supplement_id:suppId,dose:newDose,date:today});
+  }
+  renderSupplements();
+}
+
+function renderSupplements(){
+  var today=todayStr();
+  var cl=document.getElementById('supp-checklist');
+  if(!cl)return;
+  if(suppTypes.length===0){
+    cl.innerHTML='<div class="empty-hist">no supplements added yet — tap + add above</div>';
+    renderSuppCalendar();
+    return;
+  }
+  var html='';
+  suppTypes.forEach(function(st,idx){
+    var log=suppLogs.find(function(l){return l.supplement_id===st.id&&l.date===today;});
+    var taken=!!log;
+    var dose=log?log.dose:st.default_dose;
+    var color=st.color||suppColor(idx);
+    html+='<div class="supp-row'+(taken?' taken':'')+'" onclick="toggleSuppTaken(\''+st.id+'\','+st.default_dose+')">'
+      +'<div class="supp-check">'+(taken?'✓':'')+'</div>'
+      +'<div class="supp-dot" style="background:'+color+'"></div>'
+      +'<div class="supp-info"><div class="supp-name">'+st.name+'</div>'
+      +'<div class="supp-dose-label">'+dose+' '+st.unit+'</div></div>'
+      +'<div class="supp-dose-ctrl" onclick="event.stopPropagation()">'
+      +'<button class="supp-dose-btn" onclick="adjustSuppDose(\''+st.id+'\',-1,event)">−</button>'
+      +'<span class="supp-dose-val">'+dose+'</span>'
+      +'<button class="supp-dose-btn" onclick="adjustSuppDose(\''+st.id+'\',1,event)">+</button></div>'
+      +'<button class="supp-del" onclick="event.stopPropagation();deleteSupplement(\''+st.id+'\')">✕</button>'
+      +'</div>';
+  });
+  cl.innerHTML=html;
+  renderSuppCalendar();
+}
+
+function renderSuppCalendar(){
+  var cal=document.getElementById('supp-calendar');
+  if(!cal||suppTypes.length===0){if(cal)cal.innerHTML='';return;}
+  var today=new Date();var todayS=todayStr();
+  // Build 5-week grid ending on this week's Sunday
+  var dayOfWeek=today.getDay()||7; // Mon=1..Sun=7
+  var endOfWeek=new Date(today);endOfWeek.setDate(today.getDate()+(7-dayOfWeek));
+  var startDate=new Date(endOfWeek);startDate.setDate(endOfWeek.getDate()-34);
+  var days=[];
+  for(var i=0;i<35;i++){
+    var d=new Date(startDate);d.setDate(startDate.getDate()+i);
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+  }
+  var html='<div class="supp-cal-title">last 5 weeks</div><div class="supp-cal-grid">';
+  ['mo','tu','we','th','fr','sa','su'].forEach(function(d){html+='<div class="supp-cal-head">'+d+'</div>';});
+  days.forEach(function(ds){
+    var isToday=ds===todayS;
+    var isFuture=ds>todayS;
+    var dayLogs=suppLogs.filter(function(l){return l.date===ds;});
+    var allTaken=!isFuture&&suppTypes.length>0&&suppTypes.every(function(st){return dayLogs.some(function(l){return l.supplement_id===st.id;});});
+    var cls='supp-cal-day'+(isToday?' today':'')+(isFuture?' future':'')+(allTaken?' complete':'');
+    var num=parseInt(ds.slice(8));
+    html+='<div class="'+cls+'"><span class="supp-cal-num">'+num+'</span><div class="supp-cal-dots">';
+    suppTypes.forEach(function(st,idx){
+      var taken=dayLogs.some(function(l){return l.supplement_id===st.id;});
+      var color=st.color||suppColor(idx);
+      html+='<div class="supp-cal-dot'+(taken?' taken':'')+'" style="background:'+color+'"></div>';
+    });
+    html+='</div></div>';
+  });
+  html+='</div>';
+  html+='<div class="supp-legend">';
+  suppTypes.forEach(function(st,idx){
+    html+='<div class="supp-legend-item"><div class="supp-cal-dot taken" style="background:'+(st.color||suppColor(idx))+'"></div>'+st.name+'</div>';
+  });
+  html+='</div>';
+  cal.innerHTML=html;
+}
+
 function showPage(name){
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   document.getElementById('nav-'+name).classList.add('active');
@@ -1595,6 +1800,7 @@ function showPage(name){
     if(name==='health')renderHealth();
     if(name==='dashboard')renderDashboard();
     if(name==='suggestions')loadSuggestions();
+    if(name==='supplements')renderSupplements();
   }
 }
 
