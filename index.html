@@ -92,26 +92,26 @@
   .panel-kcal-summary span{color:var(--accent);}
   .panel-arrow{font-size:9px;color:var(--text3);transition:transform .25s var(--ease);}
   #nutrient-panel.expanded .panel-arrow{transform:rotate(180deg);}
-  .nutrient-bars{padding:10px 22px 14px;display:grid;grid-template-columns:1fr 1fr;gap:7px 28px;}
+  .nutrient-bars{padding:12px 22px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;}
   .nbar-row{display:flex;align-items:center;gap:10px;}
-  .nbar-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:64px;flex-shrink:0;text-align:right;}
-  .nbar-track{flex:1;height:5px;background:var(--bg4);border-radius:4px;overflow:visible;position:relative;}
-  .nbar-fill{height:100%;border-radius:4px;transition:width .6s var(--ease);max-width:100%;}
-  .nbar-over-marker{position:absolute;top:-3px;right:0;width:2px;height:11px;background:var(--border3);border-radius:1px;}
-  .nbar-value{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);width:54px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;}
+  .nbar-label{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--text3);width:58px;flex-shrink:0;text-align:right;letter-spacing:0.01em;}
+  .nbar-track{flex:1;height:6px;background:var(--bg4);border-radius:6px;overflow:visible;position:relative;}
+  .nbar-fill{height:100%;border-radius:6px;transition:width .6s var(--ease);max-width:100%;}
+  .nbar-over-marker{position:absolute;top:-3px;right:0;width:2px;height:12px;background:var(--border3);border-radius:1px;}
+  .nbar-value{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--text2);width:56px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;}
   /* ── Water row ── */
-  #water-bar-row{padding:8px 22px 14px;border-top:1px solid var(--border);}
-  .water-row-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-  .water-row-head .water-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;}
+  #water-bar-row{padding:10px 22px 16px;border-top:1px solid var(--border);}
+  .water-row-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .water-row-head .water-label{font-size:9.5px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;}
   #water-summary{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums;}
-  #water-bottles{display:flex;gap:8px;flex-wrap:wrap;}
-  .bottle{display:flex;flex-direction:column;align-items:center;gap:3px;}
-  .bottle-cap{width:8px;height:3px;border-radius:2px 2px 0 0;background:rgba(255,255,255,0.16);}
-  .bottle-body{width:19px;height:27px;border-radius:6px;border:1px solid var(--border2);background:rgba(255,255,255,0.025);overflow:hidden;display:flex;align-items:flex-end;}
-  .bottle-fill{width:100%;background:linear-gradient(180deg,rgba(108,184,255,0.55),rgba(108,184,255,0.9));transition:height .7s var(--ease);}
-  .bottle.full .bottle-body{border-color:rgba(201,242,95,0.4);}
-  .bottle.full .bottle-fill{background:linear-gradient(180deg,rgba(201,242,95,0.5),rgba(201,242,95,0.85));}
-  .bottle-pct{font-size:8px;color:var(--text3);font-family:'DM Mono',monospace;}
+  #water-bottles{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .bottle{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .bottle-cap{width:10px;height:4px;border-radius:3px 3px 0 0;background:rgba(255,255,255,0.12);}
+  .bottle-body{width:24px;height:34px;border-radius:7px;border:1.5px solid var(--border2);background:rgba(255,255,255,0.02);overflow:hidden;display:flex;align-items:flex-end;transition:border-color .4s var(--ease);}
+  .bottle-fill{width:100%;background:linear-gradient(180deg,rgba(108,184,255,0.45),rgba(108,184,255,0.85));transition:height .7s var(--ease);border-radius:0 0 5px 5px;}
+  .bottle.full .bottle-body{border-color:rgba(108,184,255,0.5);}
+  .bottle.full .bottle-fill{background:linear-gradient(180deg,rgba(108,184,255,0.6),rgba(108,184,255,0.95));}
+  .bottle-pct{font-size:8px;color:var(--text3);font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums;}
   /* ── Chat ── */
   #chat-messages{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px;width:100%;max-width:860px;margin:0 auto;}
   .msg{display:flex;gap:12px;align-items:flex-start;animation:msgin .25s var(--ease);}
@@ -649,7 +649,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v15.1 · 2026-06-10 12:25';
+var APP_BUILD = 'v15.2 · 2026-06-10 14:55';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1527,7 +1527,7 @@ function renderDashboard(){
   if(!filtered.length){statsEl.innerHTML='';chartsEl.innerHTML='<div class="no-data">no data · start logging</div>';return;}
   var byDay={};
   filtered.forEach(function(e){
-    if(!byDay[e.date])byDay[e.date]={cals:0,protein:0,carbs:0,fat:0,sugar:0,fibre:0,water:0};
+    if(!byDay[e.date])byDay[e.date]={cals:0,protein:0,carbs:0,fat:0,sugar:0,fibre:0,water:0,caffeine:0,sodium:0};
     // hydration tracking: water + non-alcohol drinks by volume
     byDay[e.date].water+=getHydrationMl(e);
     if(e.meal==='water'){
@@ -1536,6 +1536,7 @@ function renderDashboard(){
     byDay[e.date].cals+=e.calories||0;byDay[e.date].protein+=e.protein_g||0;
     byDay[e.date].carbs+=e.carbs_g||0;byDay[e.date].fat+=e.fat_g||0;
     byDay[e.date].sugar+=e.sugar_g||0;byDay[e.date].fibre+=e.fibre_g||0;
+    byDay[e.date].caffeine+=e.caffeine_mg||0;byDay[e.date].sodium+=e.sodium_mg||0;
   });
   // weight per day (last log of the day wins)
   var weightByDay={};
@@ -1560,7 +1561,8 @@ function renderDashboard(){
   chartsEl.innerHTML='<div class="chart-card" style="margin-bottom:16px"><div class="chart-title">calories vs target</div><div class="chart-wrap"><canvas id="chart-cals"></canvas></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">weight (kg)</div><div class="chart-wrap"><canvas id="chart-weight"></canvas></div></div><div class="chart-card"><div class="chart-title">hydration (L) — target '+(waterTargetDash/1000).toFixed(1)+'L</div><div class="chart-wrap"><canvas id="chart-water"></canvas></div></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">protein (g)</div><div class="chart-wrap"><canvas id="chart-protein"></canvas></div></div><div class="chart-card"><div class="chart-title">carbs & fat (g)</div><div class="chart-wrap"><canvas id="chart-macros"></canvas></div></div></div>'
-    +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">sugar (g) — max 50g</div><div class="chart-wrap"><canvas id="chart-sugar"></canvas></div></div><div class="chart-card"><div class="chart-title">fibre (g) — target 30g</div><div class="chart-wrap"><canvas id="chart-fibre"></canvas></div></div></div>';
+    +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">sugar (g) — max 50g</div><div class="chart-wrap"><canvas id="chart-sugar"></canvas></div></div><div class="chart-card"><div class="chart-title">fibre (g) — target 30g</div><div class="chart-wrap"><canvas id="chart-fibre"></canvas></div></div></div>'
+    +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">caffeine (mg) — max 400mg</div><div class="chart-wrap"><canvas id="chart-caffeine"></canvas></div></div><div class="chart-card"><div class="chart-title">sodium (mg) — max 2300mg</div><div class="chart-wrap"><canvas id="chart-sodium"></canvas></div></div></div>';
   // weight chart: spans the full range (not just food-logged days), connects gaps
   var allDates=[];for(var di=days-1;di>=0;di--){allDates.push(new Date(Date.now()-di*86400000).toISOString().slice(0,10));}
   var wLabels=allDates.map(function(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CH',{month:'short',day:'numeric'});});
@@ -1577,6 +1579,8 @@ function renderDashboard(){
   chartInstances.macros=new Chart(document.getElementById('chart-macros'),{type:'line',data:{labels,datasets:[{label:'carbs',data:sd.map(function(d){return byDay[d].carbs||null;}),borderColor:'#f0a830',backgroundColor:'rgba(240,168,48,0.05)',borderWidth:2,pointRadius:2,tension:0.3},{label:'fat',data:sd.map(function(d){return byDay[d].fat||null;}),borderColor:'#ff6b6b',backgroundColor:'rgba(255,107,107,0.05)',borderWidth:2,pointRadius:2,tension:0.3}]},options:Object.assign({},cd,{plugins:Object.assign({},cd.plugins,{legend:{display:true,labels:{color:'#9e9c94',font:{family:'DM Mono',size:10},boxWidth:10}}})})});
   chartInstances.sugar=new Chart(document.getElementById('chart-sugar'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].sugar||null;}),backgroundColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'rgba(255,107,107,0.5)':'rgba(240,168,48,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'#ff6b6b':'#f0a830';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 50;}),type:'line',borderColor:'rgba(255,107,107,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
   chartInstances.fibre=new Chart(document.getElementById('chart-fibre'),{type:'line',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].fibre||null;}),borderColor:'#40d0b0',backgroundColor:'rgba(64,208,176,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3},{data:sd.map(function(){return 30;}),borderColor:'rgba(64,208,176,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
+  chartInstances.caffeine=new Chart(document.getElementById('chart-caffeine'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].caffeine||null;}),backgroundColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'rgba(255,107,107,0.5)':'rgba(198,133,242,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'#ff6b6b':'#c685f2';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 400;}),type:'line',borderColor:'rgba(198,133,242,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
+  chartInstances.sodium=new Chart(document.getElementById('chart-sodium'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].sodium||null;}),backgroundColor:sd.map(function(d){return(byDay[d].sodium||0)>2300?'rgba(255,107,107,0.5)':'rgba(242,176,74,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].sodium||0)>2300?'#ff6b6b':'#f2b04a';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 2300;}),type:'line',borderColor:'rgba(242,176,74,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
 }
 
 // ── Settings ──────────────────────────────────────────────────────
