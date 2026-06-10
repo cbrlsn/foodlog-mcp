@@ -382,7 +382,7 @@
     <div class="nav-item" onclick="showPage('history')" id="nav-history"><span class="nav-icon">≡</span> food</div>
     <div class="nav-item" onclick="showPage('activity')" id="nav-activity"><span class="nav-icon">◈</span> activity</div>
     <div class="nav-item" onclick="showPage('health')" id="nav-health"><span class="nav-icon">♡</span> health</div>
-    <div class="nav-item" onclick="showPage('supplements')" id="nav-supplements"><span class="nav-icon">◉</span> supps</div>
+    <div class="nav-item" onclick="showPage('supplements')" id="nav-supplements"><span class="nav-icon">◉</span> daily</div>
     <div class="nav-item" onclick="showPage('suggestions')" id="nav-suggestions"><span class="nav-icon">✦</span> suggest</div>
     <div class="nav-item" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">◎</span> dashboard</div>
     <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙</span> settings</div>
@@ -454,7 +454,7 @@
       <div id="health-list"></div>
     </div>
 
-    <!-- SUPPLEMENTS -->
+    <!-- DAILY (supplements + substances) -->
     <div id="page-supplements" class="page">
       <div class="page-header">
         <div class="page-title">supplements</div>
@@ -474,6 +474,48 @@
         <div class="supp-checklist" id="supp-checklist"></div>
       </div>
       <div class="supp-calendar" id="supp-calendar"></div>
+
+      <div style="margin-top:32px;">
+        <div class="page-header">
+          <div class="page-title">substances</div>
+          <button class="btn-save" onclick="toggleSubstForm()" id="subst-add-btn">+ add</button>
+        </div>
+        <div class="supp-add-form" id="subst-add-form">
+          <div class="supp-add-row">
+            <div class="field" style="flex:2"><label>substance</label>
+              <select id="subst-new-preset" onchange="if(this.value!=='custom')document.getElementById('subst-new-name').value=this.value;" class="select-input" style="width:100%;padding:8px 10px;font-size:12px;">
+                <option value="">choose...</option>
+                <option value="Cigarette">Cigarette</option>
+                <option value="Snus">Snus</option>
+                <option value="Vape">Vape</option>
+                <option value="Cannabis (smoke)">Cannabis (smoke)</option>
+                <option value="Cannabis (edible)">Cannabis (edible)</option>
+                <option value="Beer">Beer</option>
+                <option value="Wine">Wine</option>
+                <option value="Spirits">Spirits</option>
+                <option value="custom">Other (custom)...</option>
+              </select>
+            </div>
+            <div class="field" style="flex:2"><label>name (or custom)</label><input id="subst-new-name" placeholder="e.g. Snus" /></div>
+            <button class="btn-save" onclick="addSubstance()" style="height:36px;white-space:nowrap;">save</button>
+          </div>
+        </div>
+        <div id="subst-today">
+          <div id="subst-checklist" class="supp-checklist"></div>
+        </div>
+        <div class="supp-calendar" id="subst-calendar"></div>
+      </div>
+    </div>
+
+    <!-- Drill-down modal -->
+    <div class="modal-overlay" id="drilldown-modal" onclick="if(event.target===this)this.classList.remove('open')">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title" id="drilldown-title">—</div>
+          <button class="modal-close" onclick="document.getElementById('drilldown-modal').classList.remove('open')">✕</button>
+        </div>
+        <div id="drilldown-body"></div>
+      </div>
     </div>
 
     <!-- SUGGESTIONS -->
@@ -648,7 +690,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v15.6 · 2026-06-10 15:50';
+var APP_BUILD = 'v16 · 2026-06-10 16:30';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -658,7 +700,7 @@ var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 var supabaseClient = null;
 var currentUser = null;
 var userProfile = null; // loaded from Supabase profiles table
-var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [];
+var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [];
 var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:70,height:175,age:25,sex:'male',activity:'light',calorieTarget:2000}));
 var isThinking = false, chartInstances = {};
 var panelExpanded = true;
@@ -719,12 +761,13 @@ function renderWaterBottles(){
 // Nutrient targets
 var TARGETS = {
   calories: userConfig.calorieTarget, protein: 130, carbs: 280, fat: 50,
-  sugar: 50, fibre: 30, sodium: 2300, vitamin_c: 90, vitamin_d: 20,
+  sugar: 50, fibre: 30, sodium: 2300, caffeine: 400,
+  vitamin_c: 90, vitamin_d: 20,
   iron: 18, calcium: 1000, omega3: 1.6
 };
 var UNITS = {
   calories:'kcal', protein:'g', carbs:'g', fat:'g', sugar:'g',
-  fibre:'g', sodium:'mg', vitamin_c:'mg', vitamin_d:'µg', iron:'mg', calcium:'mg', omega3:'g'
+  fibre:'g', sodium:'mg', caffeine:'mg', vitamin_c:'mg', vitamin_d:'µg', iron:'mg', calcium:'mg', omega3:'g'
 };
 var OVER_IS_BAD = {sugar:true, sodium:true, fat:false}; // fat: slightly over ok
 
@@ -848,13 +891,15 @@ async function loadAllData() {
   try {
     var cutoff=new Date(Date.now()-90*86400000).toISOString();
     var uid=currentUser.id;
-    var [fe,fa,fh,fw,fs,fsl]=await Promise.all([
+    var [fe,fa,fh,fw,fs,fsl,fst,fstl]=await Promise.all([
       supabaseClient.from('entries').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('activities').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('health_events').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('weight_logs').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:true}),
       supabaseClient.from('supplements').select('*').eq('user_id',uid).eq('active',true).order('created_at',{ascending:true}),
-      supabaseClient.from('supplement_logs').select('*').eq('user_id',uid).gte('taken_at',cutoff).order('taken_at',{ascending:true})
+      supabaseClient.from('supplement_logs').select('*').eq('user_id',uid).gte('taken_at',cutoff).order('taken_at',{ascending:true}),
+      supabaseClient.from('substances').select('*').eq('user_id',uid).eq('active',true).order('created_at',{ascending:true}),
+      supabaseClient.from('substance_logs').select('*').eq('user_id',uid).gte('logged_at',cutoff).order('logged_at',{ascending:true})
     ]);
     if(fe.error)throw fe.error;
     entries=(fe.data||[]).map(normaliseEntry);
@@ -863,6 +908,8 @@ async function loadAllData() {
     weights=fw.error?[]:(fw.data||[]).map(function(r){var dt=new Date(r.created_at);return{id:r.id,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),weight_kg:r.weight_kg};});
     suppTypes=fs.error?[]:(fs.data||[]);
     suppLogs=fsl.error?[]:(fsl.data||[]).map(function(r){var dt=new Date(r.taken_at);return{id:r.id,supplement_id:r.supplement_id,dose:r.dose,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
+    substTypes=fst.error?[]:(fst.data||[]);
+    substLogs=fstl.error?[]:(fstl.data||[]).map(function(r){var dt=new Date(r.logged_at);return{id:r.id,substance_id:r.substance_id,quantity:r.quantity||1,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
     setSyncStatus('synced','● connected');
     updateNutrientBars();
   } catch(err){setSyncStatus('error','● error: '+err.message);console.error(err);}
@@ -915,11 +962,11 @@ async function saveHealthToSupabase(h){var{data,error}=await supabaseClient.from
 // ── Nutrient bars ─────────────────────────────────────────────────
 function getTodayTotals() {
   var _n=new Date();var d=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0');
-  var t={calories:0,protein:0,carbs:0,fat:0,sugar:0,fibre:0,sodium:0,vitamin_c:0,vitamin_d:0,iron:0,calcium:0,omega3:0};
+  var t={calories:0,protein:0,carbs:0,fat:0,sugar:0,fibre:0,sodium:0,caffeine:0,vitamin_c:0,vitamin_d:0,iron:0,calcium:0,omega3:0};
   entries.filter(function(e){return e.date===d && e.meal!=='water';}).forEach(function(e){
     t.calories+=(e.calories||0); t.protein+=(e.protein_g||0); t.carbs+=(e.carbs_g||0);
     t.fat+=(e.fat_g||0); t.sugar+=(e.sugar_g||0); t.fibre+=(e.fibre_g||0);
-    t.sodium+=(e.sodium_mg||0); t.vitamin_c+=(e.vitamin_c||0); t.vitamin_d+=(e.vitamin_d||0);
+    t.sodium+=(e.sodium_mg||0); t.caffeine+=(e.caffeine_mg||0); t.vitamin_c+=(e.vitamin_c||0); t.vitamin_d+=(e.vitamin_d||0);
     t.iron+=(e.iron||0); t.calcium+=(e.calcium||0); t.omega3+=(e.omega3||0);
   });
   return t;
@@ -941,11 +988,7 @@ function updateNutrientBars() {
     {key:'sugar',label:'sugar',color:'var(--red)',over_bad:true},
     {key:'fibre',label:'fibre',color:'var(--teal)'},
     {key:'sodium',label:'sodium',color:'#a0a0c0',over_bad:true},
-    {key:'vitamin_c',label:'vit C',color:'#f0d060'},
-    {key:'vitamin_d',label:'vit D',color:'#e0b040'},
-    {key:'iron',label:'iron',color:'#c08060'},
-    {key:'calcium',label:'calcium',color:'#80c0e0'},
-    {key:'omega3',label:'omega-3',color:'#60d0b0'}
+    {key:'caffeine',label:'caffeine',color:'var(--purple)',over_bad:true}
   ];
 
   var barsEl=document.getElementById('nutrient-bars');
@@ -1561,8 +1604,8 @@ function renderDashboard(){
   var sd=daysArr.sort();
   var labels=sd.map(function(d){return new Date(d+'T12:00:00').toLocaleDateString('en-CH',{month:'short',day:'numeric'});});
   Object.values(chartInstances).forEach(function(c){c.destroy();});chartInstances={};
-  var cd={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161614',titleColor:'#a3a198',bodyColor:'#edebe3',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:10,padding:10,titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:11},displayColors:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}}}};
-  chartsEl.innerHTML='<div class="chart-card" style="margin-bottom:16px"><div class="chart-title">calories vs target</div><div class="chart-wrap"><canvas id="chart-cals"></canvas></div></div>'
+  var baseCd={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161614',titleColor:'#a3a198',bodyColor:'#edebe3',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,cornerRadius:10,padding:10,titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:11},displayColors:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5854',font:{family:'DM Mono',size:10}}}}};
+  var cd=baseCd;drilldownDates=sd;  chartsEl.innerHTML='<div class="chart-card" style="margin-bottom:16px"><div class="chart-title">calories vs target</div><div class="chart-wrap"><canvas id="chart-cals"></canvas></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">weight (kg)</div><div class="chart-wrap"><canvas id="chart-weight"></canvas></div></div><div class="chart-card"><div class="chart-title">hydration (L) — target '+(waterTargetDash/1000).toFixed(1)+'L</div><div class="chart-wrap"><canvas id="chart-water"></canvas></div></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">protein (g)</div><div class="chart-wrap"><canvas id="chart-protein"></canvas></div></div><div class="chart-card"><div class="chart-title">carbs & fat (g)</div><div class="chart-wrap"><canvas id="chart-macros"></canvas></div></div></div>'
     +'<div class="charts-grid"><div class="chart-card"><div class="chart-title">sugar (g) — max 50g</div><div class="chart-wrap"><canvas id="chart-sugar"></canvas></div></div><div class="chart-card"><div class="chart-title">fibre (g) — target 30g</div><div class="chart-wrap"><canvas id="chart-fibre"></canvas></div></div></div>'
@@ -1578,13 +1621,13 @@ function renderDashboard(){
     document.getElementById('chart-weight').parentElement.innerHTML='<div class="no-data" style="padding:24px">no weight logged yet — use the quick-log in the sidebar or tell the chat ("weighed 63.8 today")</div>';
   }
   chartInstances.water=new Chart(document.getElementById('chart-water'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].water?Math.round(byDay[d].water/100)/10:null;}),backgroundColor:'rgba(100,180,255,0.3)',borderColor:'#64b4ff',borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return Math.round(waterTargetDash/100)/10;}),type:'line',borderColor:'rgba(100,180,255,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
-  chartInstances.cals=new Chart(document.getElementById('chart-cals'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].cals||null;}),backgroundColor:'rgba(200,240,96,0.3)',borderColor:'#c8f060',borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return target;}),type:'line',borderColor:'rgba(200,240,96,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
-  chartInstances.protein=new Chart(document.getElementById('chart-protein'),{type:'line',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].protein||null;}),borderColor:'#60b0f0',backgroundColor:'rgba(96,176,240,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3},{data:sd.map(function(){return 130;}),borderColor:'rgba(96,176,240,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
+  chartInstances.cals=new Chart(document.getElementById('chart-cals'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].cals||null;}),backgroundColor:'rgba(200,240,96,0.3)',borderColor:'#c8f060',borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return target;}),type:'line',borderColor:'rgba(200,240,96,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('cals')});
+  chartInstances.protein=new Chart(document.getElementById('chart-protein'),{type:'line',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].protein||null;}),borderColor:'#60b0f0',backgroundColor:'rgba(96,176,240,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3},{data:sd.map(function(){return 130;}),borderColor:'rgba(96,176,240,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('protein')});
   chartInstances.macros=new Chart(document.getElementById('chart-macros'),{type:'line',data:{labels,datasets:[{label:'carbs',data:sd.map(function(d){return byDay[d].carbs||null;}),borderColor:'#f0a830',backgroundColor:'rgba(240,168,48,0.05)',borderWidth:2,pointRadius:2,tension:0.3},{label:'fat',data:sd.map(function(d){return byDay[d].fat||null;}),borderColor:'#ff6b6b',backgroundColor:'rgba(255,107,107,0.05)',borderWidth:2,pointRadius:2,tension:0.3}]},options:Object.assign({},cd,{plugins:Object.assign({},cd.plugins,{legend:{display:true,labels:{color:'#9e9c94',font:{family:'DM Mono',size:10},boxWidth:10}}})})});
-  chartInstances.sugar=new Chart(document.getElementById('chart-sugar'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].sugar||null;}),backgroundColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'rgba(255,107,107,0.5)':'rgba(240,168,48,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'#ff6b6b':'#f0a830';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 50;}),type:'line',borderColor:'rgba(255,107,107,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
-  chartInstances.fibre=new Chart(document.getElementById('chart-fibre'),{type:'line',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].fibre||null;}),borderColor:'#40d0b0',backgroundColor:'rgba(64,208,176,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3},{data:sd.map(function(){return 30;}),borderColor:'rgba(64,208,176,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
-  chartInstances.caffeine=new Chart(document.getElementById('chart-caffeine'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].caffeine||null;}),backgroundColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'rgba(255,107,107,0.5)':'rgba(198,133,242,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'#ff6b6b':'#c685f2';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 400;}),type:'line',borderColor:'rgba(198,133,242,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
-  chartInstances.sodium=new Chart(document.getElementById('chart-sodium'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].sodium||null;}),backgroundColor:sd.map(function(d){return(byDay[d].sodium||0)>2300?'rgba(255,107,107,0.5)':'rgba(242,176,74,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].sodium||0)>2300?'#ff6b6b':'#f2b04a';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 2300;}),type:'line',borderColor:'rgba(242,176,74,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
+  chartInstances.sugar=new Chart(document.getElementById('chart-sugar'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].sugar||null;}),backgroundColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'rgba(255,107,107,0.5)':'rgba(240,168,48,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'#ff6b6b':'#f0a830';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 50;}),type:'line',borderColor:'rgba(255,107,107,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('sugar')});
+  chartInstances.fibre=new Chart(document.getElementById('chart-fibre'),{type:'line',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].fibre||null;}),borderColor:'#40d0b0',backgroundColor:'rgba(64,208,176,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3},{data:sd.map(function(){return 30;}),borderColor:'rgba(64,208,176,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('fibre')});
+  chartInstances.caffeine=new Chart(document.getElementById('chart-caffeine'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].caffeine||null;}),backgroundColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'rgba(255,107,107,0.5)':'rgba(198,133,242,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'#ff6b6b':'#c685f2';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 400;}),type:'line',borderColor:'rgba(198,133,242,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('caffeine')});
+  chartInstances.sodium=new Chart(document.getElementById('chart-sodium'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].sodium||null;}),backgroundColor:sd.map(function(d){return(byDay[d].sodium||0)>2300?'rgba(255,107,107,0.5)':'rgba(242,176,74,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].sodium||0)>2300?'#ff6b6b':'#f2b04a';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 2300;}),type:'line',borderColor:'rgba(242,176,74,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('sodium')});
 }
 
 // ── Settings ──────────────────────────────────────────────────────
@@ -1796,6 +1839,148 @@ function renderSuppCalendar(){
   cal.innerHTML=html;
 }
 
+// ── Substances ────────────────────────────────────────────────────
+var SUBST_COLORS=['#ff7a76','#f2b04a','#c685f2','#67d6f0','#67d695','#6fb6f5','#ff9ecf','#a0d060'];
+function substColor(idx){return SUBST_COLORS[idx%SUBST_COLORS.length];}
+
+function toggleSubstForm(){
+  var f=document.getElementById('subst-add-form');f.classList.toggle('open');
+  if(f.classList.contains('open'))document.getElementById('subst-new-preset').focus();
+}
+
+async function addSubstance(){
+  var name=document.getElementById('subst-new-name').value.trim();
+  if(!name){showToast('enter a name');return;}
+  var color=substColor(substTypes.length);
+  var {data,error}=await supabaseClient.from('substances').insert({user_id:currentUser.id,name:name,color:color,active:true}).select().single();
+  if(error){showToast('save failed');console.error(error);return;}
+  substTypes.push(data);
+  document.getElementById('subst-new-name').value='';
+  document.getElementById('subst-new-preset').value='';
+  document.getElementById('subst-add-form').classList.remove('open');
+  renderSubstances();
+  showToast('added '+name);
+}
+
+async function deleteSubstance(id){
+  if(!confirm('Remove this substance?'))return;
+  await supabaseClient.from('substances').update({active:false}).eq('id',id);
+  substTypes=substTypes.filter(function(s){return s.id!==id;});
+  renderSubstances();
+}
+
+async function logSubstance(substId){
+  var {data,error}=await supabaseClient.from('substance_logs').insert({user_id:currentUser.id,substance_id:substId,quantity:1,logged_at:new Date().toISOString()}).select().single();
+  if(error){showToast('log failed');console.error(error);return;}
+  substLogs.push({id:data.id,substance_id:substId,quantity:1,date:todayStr()});
+  renderSubstances();
+}
+
+async function unlogSubstance(substId){
+  var today=todayStr();
+  var todayLogs=substLogs.filter(function(l){return l.substance_id===substId&&l.date===today;});
+  if(todayLogs.length===0)return;
+  var last=todayLogs[todayLogs.length-1];
+  await supabaseClient.from('substance_logs').delete().eq('id',last.id);
+  substLogs=substLogs.filter(function(l){return l.id!==last.id;});
+  renderSubstances();
+}
+
+function renderSubstances(){
+  var today=todayStr();
+  var cl=document.getElementById('subst-checklist');
+  if(!cl)return;
+  if(substTypes.length===0){
+    cl.innerHTML='<div class="empty-hist">no substances added yet — tap + add above</div>';
+    renderSubstCalendar();return;
+  }
+  var html='';
+  substTypes.forEach(function(st,idx){
+    var todayCount=substLogs.filter(function(l){return l.substance_id===st.id&&l.date===today;}).length;
+    var color=st.color||substColor(idx);
+    html+='<div class="supp-row'+(todayCount>0?' taken':'')+'">'
+      +'<div class="supp-dot" style="background:'+color+'"></div>'
+      +'<div class="supp-info"><div class="supp-name">'+st.name+'</div>'
+      +'<div class="supp-dose-label">'+todayCount+' today</div></div>'
+      +'<div class="supp-dose-ctrl">'
+      +'<button class="supp-dose-btn" onclick="event.stopPropagation();unlogSubstance(\''+st.id+'\')">−</button>'
+      +'<span class="supp-dose-val">'+todayCount+'</span>'
+      +'<button class="supp-dose-btn" onclick="event.stopPropagation();logSubstance(\''+st.id+'\')">+</button></div>'
+      +'<button class="supp-del" onclick="event.stopPropagation();deleteSubstance(\''+st.id+'\')">✕</button>'
+      +'</div>';
+  });
+  cl.innerHTML=html;
+  renderSubstCalendar();
+}
+
+function renderSubstCalendar(){
+  var cal=document.getElementById('subst-calendar');
+  if(!cal||substTypes.length===0){if(cal)cal.innerHTML='';return;}
+  var today=new Date();var todayS=todayStr();
+  var dayOfWeek=today.getDay()||7;
+  var endOfWeek=new Date(today);endOfWeek.setDate(today.getDate()+(7-dayOfWeek));
+  var startDate=new Date(endOfWeek);startDate.setDate(endOfWeek.getDate()-34);
+  var days=[];
+  for(var i=0;i<35;i++){var d=new Date(startDate);d.setDate(startDate.getDate()+i);days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));}
+  var html='<div class="supp-cal-title">last 5 weeks</div><div class="supp-cal-grid">';
+  ['mo','tu','we','th','fr','sa','su'].forEach(function(d){html+='<div class="supp-cal-head">'+d+'</div>';});
+  days.forEach(function(ds){
+    var isToday=ds===todayS;var isFuture=ds>todayS;
+    var dayLogs=substLogs.filter(function(l){return l.date===ds;});
+    var hasAny=dayLogs.length>0;
+    var cls='supp-cal-day'+(isToday?' today':'')+(isFuture?' future':'')+(hasAny&&!isFuture?' complete':'');
+    var num=parseInt(ds.slice(8));
+    html+='<div class="'+cls+'"><span class="supp-cal-num">'+num+'</span><div class="supp-cal-dots">';
+    substTypes.forEach(function(st,idx){
+      var count=dayLogs.filter(function(l){return l.substance_id===st.id;}).length;
+      if(!count)return;
+      var color=st.color||substColor(idx);
+      html+='<div class="supp-cal-dot taken" style="background:'+color+'"></div>';
+    });
+    html+='</div></div>';
+  });
+  html+='</div><div class="supp-legend">';
+  substTypes.forEach(function(st,idx){html+='<div class="supp-legend-item"><div class="supp-cal-dot taken" style="background:'+(st.color||substColor(idx))+'"></div>'+st.name+'</div>';});
+  html+='</div>';
+  cal.innerHTML=html;
+}
+
+// ── Dashboard drill-down ─────────────────────────────────────────
+var drilldownDates=[]; // set during renderDashboard
+function chartOptsWithDrill(metric){
+  return Object.assign({},JSON.parse(JSON.stringify(baseCd)),{onClick:function(evt,elems){
+    if(!elems.length||elems[0].datasetIndex!==0)return;
+    var idx=elems[0].index;var date=drilldownDates[idx];
+    if(!date)return;
+    showDrillDown(date,metric);
+  }});
+}
+
+function showDrillDown(date,metric){
+  var metricMap={cals:'calories',protein:'protein_g',carbs:'carbs_g',fat:'fat_g',sugar:'sugar_g',fibre:'fibre_g',caffeine:'caffeine_mg',sodium:'sodium_mg'};
+  var field=metricMap[metric]||metric;
+  var unitMap={calories:'kcal',protein_g:'g',carbs_g:'g',fat_g:'g',sugar_g:'g',fibre_g:'g',caffeine_mg:'mg',sodium_mg:'mg'};
+  var unit=unitMap[field]||'';
+  var dayEntries=entries.filter(function(e){return e.date===date&&e.meal!=='water';});
+  dayEntries.sort(function(a,b){return(b[field]||0)-(a[field]||0);});
+  var total=dayEntries.reduce(function(s,e){return s+(e[field]||0);},0);
+  document.getElementById('drilldown-title').textContent=fmtDate(date)+' · '+metric;
+  var html='<div style="display:flex;flex-direction:column;gap:8px;">';
+  dayEntries.forEach(function(e){
+    var val=Math.round((e[field]||0)*10)/10;
+    if(!val)return;
+    var pct=total>0?Math.round(val/total*100):0;
+    html+='<div style="display:flex;align-items:center;gap:10px;">'
+      +'<div style="flex:1;min-width:0;font-size:12px;color:var(--text);">'+e.items+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2);white-space:nowrap;">'+Math.round(val)+unit+'</div>'
+      +'<div style="width:50px;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;flex-shrink:0;">'
+      +'<div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:3px;"></div></div></div>';
+  });
+  html+='<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:right;">total: '+Math.round(total)+unit+'</div></div>';
+  document.getElementById('drilldown-body').innerHTML=html;
+  document.getElementById('drilldown-modal').classList.add('open');
+}
+
 function showPage(name){
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   document.getElementById('nav-'+name).classList.add('active');
@@ -1809,7 +1994,7 @@ function showPage(name){
     if(name==='health')renderHealth();
     if(name==='dashboard')renderDashboard();
     if(name==='suggestions')loadSuggestions();
-    if(name==='supplements')renderSupplements();
+    if(name==='supplements'){renderSupplements();renderSubstances();}
   }
 }
 
