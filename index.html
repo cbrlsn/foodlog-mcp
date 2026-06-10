@@ -649,7 +649,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v15 · 2026-06-10 11:15';
+var APP_BUILD = 'v15.1 · 2026-06-10 12:25';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1767,14 +1767,15 @@ function renderSuppCalendar(){
     var isToday=ds===todayS;
     var isFuture=ds>todayS;
     var dayLogs=suppLogs.filter(function(l){return l.date===ds;});
-    var allTaken=!isFuture&&suppTypes.length>0&&suppTypes.every(function(st){return dayLogs.some(function(l){return l.supplement_id===st.id;});});
+    var allTaken=!isFuture&&dayLogs.length>0&&suppTypes.every(function(st){return dayLogs.some(function(l){return l.supplement_id===st.id;});});
     var cls='supp-cal-day'+(isToday?' today':'')+(isFuture?' future':'')+(allTaken?' complete':'');
     var num=parseInt(ds.slice(8));
     html+='<div class="'+cls+'"><span class="supp-cal-num">'+num+'</span><div class="supp-cal-dots">';
     suppTypes.forEach(function(st,idx){
       var taken=dayLogs.some(function(l){return l.supplement_id===st.id;});
+      if(!taken)return; // only show dots for supplements actually taken
       var color=st.color||suppColor(idx);
-      html+='<div class="supp-cal-dot'+(taken?' taken':'')+'" style="background:'+color+'"></div>';
+      html+='<div class="supp-cal-dot taken" style="background:'+color+'"></div>';
     });
     html+='</div></div>';
   });
