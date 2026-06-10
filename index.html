@@ -348,7 +348,7 @@
       <div class="sync-indicator" id="sync-status">● connected</div>
       <div class="profile-block">
         <div class="name">Clem</div>
-        <div class="stats"><span id="sidebar-age">25</span>y · <span id="sidebar-weight">70</span>kg · ~<span id="sidebar-kcal">2000</span> kcal/day</div>
+        <div class="stats"><span id="sidebar-age">25</span>y · <span id="sidebar-weight">70</span>kg · <span id="sidebar-bmi" title="BMI">20.4</span> bmi · ~<span id="sidebar-kcal">2000</span> kcal/day</div>
         <div class="weight-row">
           <input type="number" id="weight-quick" value="64" min="40" max="150" step="0.5"/>
           <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">kg</span>
@@ -584,7 +584,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v14.1 · 2026-06-10 09:00';
+var APP_BUILD = 'v14.2 · 2026-06-10 10:45';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -744,6 +744,11 @@ function applyProfile(p){
   if(ageEl)ageEl.textContent=age;
   if(weightEl)weightEl.textContent=p.weight_kg||userConfig.weight||'?';
   if(kcalEl)kcalEl.textContent=userConfig.calorieTarget;
+  var bmiEl=document.getElementById('sidebar-bmi');
+  if(bmiEl){
+    var bw=p.weight_kg||userConfig.weight||0;var bh=p.height_cm||userConfig.height||0;
+    bmiEl.textContent=(bw&&bh)?(bw/((bh/100)*(bh/100))).toFixed(1):'—';
+  }
   var greetingEl=document.getElementById('greeting-msg');
   if(greetingEl)greetingEl.textContent='Hey '+name+'! Log food, activity, or symptoms — all in one place. I\'ll figure out what to track. You can also mention when something happened ("had this at 8am") and I\'ll set the time correctly.';
 }
