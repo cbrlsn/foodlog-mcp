@@ -364,7 +364,7 @@
 <body>
 <div id="setup-screen" style="display:none">
   <div class="setup-card">
-    <h1>foodlog</h1>
+    <h1>🥗 foodlog</h1>
     <div id="auth-version" style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin:-4px 0 8px;"></div>
     <p id="auth-subtitle">Sign in to your account.</p>
     <div id="auth-error" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:16px;"></div>
@@ -387,15 +387,15 @@
   <div id="sidebar">
     <div class="logo">foodlog<div id="app-version" style="font-size:9px;color:var(--text3);font-weight:300;letter-spacing:0;margin-top:2px;"></div></div>
     <div class="nav-section">log</div>
-    <div class="nav-item active" onclick="showPage('log')" id="nav-log"><span class="nav-icon">✎</span> chat</div>
+    <div class="nav-item active" onclick="showPage('log')" id="nav-log"><span class="nav-icon">💬</span> chat</div>
     <div class="nav-section">view</div>
-    <div class="nav-item" onclick="showPage('history')" id="nav-history"><span class="nav-icon">≡</span> food</div>
-    <div class="nav-item" onclick="showPage('activity')" id="nav-activity"><span class="nav-icon">◈</span> activity</div>
-    <div class="nav-item" onclick="showPage('health')" id="nav-health"><span class="nav-icon">♡</span> health</div>
-    <div class="nav-item" onclick="showPage('supplements')" id="nav-supplements"><span class="nav-icon">◉</span> daily</div>
-    <div class="nav-item" onclick="showPage('suggestions')" id="nav-suggestions"><span class="nav-icon">✦</span> suggest</div>
-    <div class="nav-item" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">◎</span> dashboard</div>
-    <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙</span> settings</div>
+    <div class="nav-item" onclick="showPage('history')" id="nav-history"><span class="nav-icon">🍽️</span> food</div>
+    <div class="nav-item" onclick="showPage('activity')" id="nav-activity"><span class="nav-icon">🏃</span> activity</div>
+    <div class="nav-item" onclick="showPage('health')" id="nav-health"><span class="nav-icon">❤️</span> health</div>
+    <div class="nav-item" onclick="showPage('supplements')" id="nav-supplements"><span class="nav-icon">✅</span> daily</div>
+    <div class="nav-item" onclick="showPage('suggestions')" id="nav-suggestions"><span class="nav-icon">🍳</span> suggest</div>
+    <div class="nav-item" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">📊</span> dashboard</div>
+    <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙️</span> settings</div>
     <div class="sidebar-bottom">
       <div class="sync-indicator" id="sync-status">● connected</div>
       <div class="profile-block">
@@ -435,31 +435,31 @@
       <div id="chat-messages">
         <div class="msg msg-claude">
           <div class="msg-avatar">ai</div>
-          <div class="msg-body"><div class="msg-text" id="greeting-msg">Hey! Log food, activity, or symptoms — all in one place. I'll figure out what to track. You can also mention when something happened ("had this at 8am") and I'll set the time correctly.</div></div>
+          <div class="msg-body"><div class="msg-text" id="greeting-msg">Hey! 👋 Tell me what you ate, how you moved, or how you're feeling — I'll handle the rest. You can be casual ("had a banana and coffee at 8am") and I'll figure it out.</div></div>
         </div>
       </div>
       <div id="chat-input-area">
-        <textarea id="chat-input" placeholder="log food, activity, how you're feeling..." rows="1"></textarea>
+        <textarea id="chat-input" placeholder="what did you eat, do, or feel today?" rows="1"></textarea>
         <button id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 16 16"><path d="M1 8L15 1L10 8L15 15L1 8Z"/></svg></button>
       </div>
     </div>
 
     <!-- FOOD HISTORY -->
     <div id="page-history" class="page">
-      <div class="page-header"><div class="page-title">food history</div><div class="page-sub" id="hist-count">0 entries</div></div>
+      <div class="page-header"><div class="page-title">🍽️ food history</div><div class="page-sub" id="hist-count">0 entries</div></div>
       <div id="history-list"></div>
     </div>
 
     <!-- ACTIVITY -->
     <div id="page-activity" class="page">
-      <div class="page-header"><div class="page-title">activity</div><div class="page-sub" id="activity-count">0 sessions</div></div>
+      <div class="page-header"><div class="page-title">🏃 activity</div><div class="page-sub" id="activity-count">0 sessions</div></div>
       <div class="activity-summary" id="activity-summary"></div>
       <div id="activity-list"></div>
     </div>
 
     <!-- HEALTH -->
     <div id="page-health" class="page">
-      <div class="page-header"><div class="page-title">health log</div><div class="page-sub" id="health-count">0 events</div></div>
+      <div class="page-header"><div class="page-title">❤️ health log</div><div class="page-sub" id="health-count">0 events</div></div>
       <div class="health-summary" id="health-summary"></div>
       <div id="health-list"></div>
     </div>
@@ -467,13 +467,13 @@
     <!-- DAILY (goals + supplements + substances) -->
     <div id="page-supplements" class="page">
       <div class="page-header">
-        <div class="page-title">today's goals</div>
+        <div class="page-title">🎯 today's goals</div>
         <div id="goals-score" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);"></div>
       </div>
       <div id="daily-goals" class="supp-checklist" style="margin-bottom:28px;"></div>
 
       <div class="page-header">
-        <div class="page-title">supplements</div>
+        <div class="page-title">💊 supplements</div>
         <button class="btn-save" onclick="toggleSuppForm()" id="supp-add-btn">+ add</button>
       </div>
       <div class="supp-add-form" id="supp-add-form">
@@ -493,7 +493,7 @@
 
       <div style="margin-top:32px;">
         <div class="page-header">
-          <div class="page-title">substances</div>
+          <div class="page-title">🔥 substances</div>
           <button class="btn-save" onclick="toggleSubstForm()" id="subst-add-btn">+ add</button>
         </div>
         <div class="supp-add-form" id="subst-add-form">
@@ -526,7 +526,7 @@
     <!-- SUGGESTIONS -->
     <div id="page-suggestions" class="page">
       <div class="page-header">
-        <div class="page-title">what to eat</div>
+        <div class="page-title">🍳 what to eat</div>
         <button class="btn-save" onclick="loadSuggestions()">↻ refresh</button>
       </div>
       <div id="suggest-context" class="suggest-context"></div>
@@ -536,7 +536,7 @@
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page">
       <div class="page-header">
-        <div class="page-title">dashboard</div>
+        <div class="page-title">📊 dashboard</div>
         <select id="dash-range" onchange="renderDashboard()" class="select-input">
           <option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>
         </select>
@@ -547,7 +547,7 @@
 
     <!-- SETTINGS -->
     <div id="page-settings" class="page">
-      <div class="page-header"><div class="page-title">settings</div></div>
+      <div class="page-header"><div class="page-title">⚙️ settings</div></div>
       <div class="settings-section">
         <h3>profile</h3>
         <div class="setting-row">
@@ -716,7 +716,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v17 · 2026-06-10 18:30';
+var APP_BUILD = 'v17.1 · 2026-06-10 18:45';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1873,7 +1873,7 @@ function renderSupplements(){
   var cl=document.getElementById('supp-checklist');
   if(!cl)return;
   if(suppTypes.length===0){
-    cl.innerHTML='<div class="empty-hist">no supplements added yet — tap + add above</div>';
+    cl.innerHTML='<div class="empty-hist">no supplements yet — tap + add to start tracking your daily stack 💊</div>';
     renderSuppCalendar();
     return;
   }
@@ -1991,7 +1991,7 @@ function renderSubstances(){
   var cl=document.getElementById('subst-checklist');
   if(!cl)return;
   if(substTypes.length===0){
-    cl.innerHTML='<div class="empty-hist">no substances added yet — tap + add above</div>';
+    cl.innerHTML='<div class="empty-hist">nothing tracked yet — add substances you want to monitor 📋</div>';
     renderSubstCalendar();return;
   }
   var html='';
