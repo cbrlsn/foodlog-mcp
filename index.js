@@ -23,6 +23,7 @@ const app = express();
 // Only allow requests from our Netlify app
 const ALLOWED_ORIGINS = [
   'https://clemsfoodlog2.netlify.app',
+  'https://cbrlsn.github.io',
   'http://localhost:3000',
   'http://localhost:8080',
 ];
@@ -102,6 +103,10 @@ server.tool(
   async (args) => {
     const payload = { ...args };
     if (args.entry_datetime) { payload.created_at = args.entry_datetime; delete payload.entry_datetime; }
+    // Reclassify plain-water entries that arrive with the wrong meal_type
+    if (payload.meal_type !== 'water' && /^\s*\d*[.,]?\d*\s*(l|ml|liter|litre|liters|litres)?\s*(of\s+)?water\s*$/i.test(payload.description || '')) {
+      payload.meal_type = 'water';
+    }
     if (payload.meal_type === 'water') {
       const ml = payload.calories || 0;
       payload.calories = ml;
