@@ -306,6 +306,31 @@
   .supp-cal-dot.taken{opacity:1;}
   .supp-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;}
   .supp-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;}
+  /* ── Journal ── */
+  .journal-page{max-width:720px !important;margin:0 auto;}
+  .journal-page>*{max-width:none !important;}
+  .journal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .journal-font-ctrl{display:flex;gap:4px;}
+  .journal-font-btn{background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text2);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;cursor:pointer;transition:all .12s var(--ease);}
+  .journal-font-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .journal-write-area{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:28px;box-shadow:var(--card-hl);transition:border-color .2s;}
+  .journal-write-area:focus-within{border-color:rgba(201,242,95,0.3);}
+  .journal-textarea{width:100%;background:transparent;border:none;color:var(--text);font-family:'DM Sans',Georgia,serif;font-size:16px;line-height:1.85;resize:none;outline:none;min-height:180px;letter-spacing:0.01em;}
+  .journal-textarea::placeholder{color:var(--text3);font-style:italic;}
+  .journal-write-footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+  .journal-charcount{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+  .journal-done-btn{background:var(--accent);color:#101009;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s var(--ease);}
+  .journal-done-btn:hover{background:var(--accent2);box-shadow:0 4px 16px var(--accent-glow);}
+  .journal-done-btn:active{transform:scale(0.97);}
+  .journal-day-group{margin-bottom:24px;}
+  .journal-day-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+  .journal-entry-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:10px;position:relative;box-shadow:var(--card-hl);transition:border-color .2s;}
+  .journal-entry-card:hover{border-color:var(--border2);}
+  .journal-entry-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:8px;}
+  .journal-entry-text{font-family:'DM Sans',Georgia,serif;font-size:16px;line-height:1.85;color:var(--text);white-space:pre-wrap;word-wrap:break-word;letter-spacing:0.01em;}
+  .journal-entry-del{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:4px 6px;border-radius:5px;opacity:0;transition:all .12s;}
+  .journal-entry-card:hover .journal-entry-del{opacity:1;}
+  .journal-entry-del:hover{color:var(--red);background:rgba(255,122,118,0.1);}
   /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}
@@ -388,6 +413,7 @@
     <div class="logo">foodlog<div id="app-version" style="font-size:9px;color:var(--text3);font-weight:300;letter-spacing:0;margin-top:2px;"></div></div>
     <div class="nav-section">log</div>
     <div class="nav-item active" onclick="showPage('log')" id="nav-log"><span class="nav-icon">💬</span> chat</div>
+    <div class="nav-item" onclick="showPage('journal')" id="nav-journal"><span class="nav-icon">📓</span> journal</div>
     <div class="nav-section">view</div>
     <div class="nav-item" onclick="showPage('history')" id="nav-history"><span class="nav-icon">🍽️</span> food</div>
     <div class="nav-item" onclick="showPage('activity')" id="nav-activity"><span class="nav-icon">🏃</span> activity</div>
@@ -442,6 +468,26 @@
         <textarea id="chat-input" placeholder="what did you eat, do, or feel today?" rows="1"></textarea>
         <button id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 16 16"><path d="M1 8L15 1L10 8L15 15L1 8Z"/></svg></button>
       </div>
+    </div>
+
+    <!-- JOURNAL -->
+    <div id="page-journal" class="page journal-page">
+      <div class="journal-header">
+        <div class="page-title">📓 journal</div>
+        <div class="journal-font-ctrl">
+          <button class="journal-font-btn" onclick="setJournalFont(-1)">A−</button>
+          <button class="journal-font-btn" onclick="setJournalFont(0)">A</button>
+          <button class="journal-font-btn" onclick="setJournalFont(1)">A+</button>
+        </div>
+      </div>
+      <div class="journal-write-area">
+        <textarea id="journal-input" class="journal-textarea" placeholder="What's on your mind..."></textarea>
+        <div class="journal-write-footer">
+          <span class="journal-charcount" id="journal-charcount"></span>
+          <button class="journal-done-btn" onclick="saveJournalEntry()">✓ done</button>
+        </div>
+      </div>
+      <div id="journal-entries"></div>
     </div>
 
     <!-- FOOD HISTORY -->
@@ -716,7 +762,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v17.1 · 2026-06-10 18:45';
+var APP_BUILD = 'v18 · 2026-06-10 19:00';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -726,7 +772,7 @@ var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 var supabaseClient = null;
 var currentUser = null;
 var userProfile = null; // loaded from Supabase profiles table
-var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [];
+var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [], journalEntries = [];
 var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:70,height:175,age:25,sex:'male',activity:'light',calorieTarget:2000}));
 var isThinking = false, chartInstances = {};
 var panelExpanded = true;
@@ -917,7 +963,7 @@ async function loadAllData() {
   try {
     var cutoff=new Date(Date.now()-90*86400000).toISOString();
     var uid=currentUser.id;
-    var [fe,fa,fh,fw,fs,fsl,fst,fstl]=await Promise.all([
+    var [fe,fa,fh,fw,fs,fsl,fst,fstl,fj]=await Promise.all([
       supabaseClient.from('entries').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('activities').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('health_events').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
@@ -925,7 +971,8 @@ async function loadAllData() {
       supabaseClient.from('supplements').select('*').eq('user_id',uid).eq('active',true).order('created_at',{ascending:true}),
       supabaseClient.from('supplement_logs').select('*').eq('user_id',uid).gte('taken_at',cutoff).order('taken_at',{ascending:true}),
       supabaseClient.from('substances').select('*').eq('user_id',uid).eq('active',true).order('created_at',{ascending:true}),
-      supabaseClient.from('substance_logs').select('*').eq('user_id',uid).gte('logged_at',cutoff).order('logged_at',{ascending:true})
+      supabaseClient.from('substance_logs').select('*').eq('user_id',uid).gte('logged_at',cutoff).order('logged_at',{ascending:true}),
+      supabaseClient.from('journal_entries').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(50)
     ]);
     if(fe.error)throw fe.error;
     entries=(fe.data||[]).map(normaliseEntry);
@@ -936,6 +983,7 @@ async function loadAllData() {
     suppLogs=fsl.error?[]:(fsl.data||[]).map(function(r){var dt=new Date(r.taken_at);return{id:r.id,supplement_id:r.supplement_id,dose:r.dose,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
     substTypes=fst.error?[]:(fst.data||[]);
     substLogs=fstl.error?[]:(fstl.data||[]).map(function(r){var dt=new Date(r.logged_at);return{id:r.id,substance_id:r.substance_id,quantity:r.quantity||1,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
+    journalEntries=fj.error?[]:(fj.data||[]);
     setSyncStatus('synced','● connected');
     updateNutrientBars();
   } catch(err){setSyncStatus('error','● error: '+err.message);console.error(err);}
@@ -1759,6 +1807,83 @@ async function exportData(){var blob=new Blob([JSON.stringify({entries,activitie
 async function clearAllData(){if(!await showConfirm('Delete ALL your data? This cannot be undone.'))return;if(supabaseClient)await Promise.all([supabaseClient.from('entries').delete().eq('user_id',currentUser.id),supabaseClient.from('activities').delete().eq('user_id',currentUser.id),supabaseClient.from('health_events').delete().eq('user_id',currentUser.id)]);entries=[];activities=[];healthEvents=[];updateNutrientBars();showToast('cleared');}
 
 // ── Nav ───────────────────────────────────────────────────────────
+// ── Journal ───────────────────────────────────────────────────────
+var journalFontSize=parseInt(localStorage.getItem('fl-journal-font'))||16;
+
+function setJournalFont(dir){
+  if(dir===0)journalFontSize=16;
+  else journalFontSize=Math.max(13,Math.min(24,journalFontSize+(dir*2)));
+  localStorage.setItem('fl-journal-font',journalFontSize);
+  applyJournalFont();
+}
+
+function applyJournalFont(){
+  var ta=document.getElementById('journal-input');
+  if(ta)ta.style.fontSize=journalFontSize+'px';
+  document.querySelectorAll('.journal-entry-text').forEach(function(el){el.style.fontSize=journalFontSize+'px';});
+}
+
+async function saveJournalEntry(){
+  var ta=document.getElementById('journal-input');
+  var text=(ta.value||'').trim();
+  if(!text){showToast('write something first');return;}
+  var {data,error}=await supabaseClient.from('journal_entries').insert({user_id:currentUser.id,content:text}).select().single();
+  if(error){showToast('save failed');console.error(error);return;}
+  journalEntries.unshift(data);
+  ta.value='';
+  document.getElementById('journal-charcount').textContent='';
+  renderJournal();
+  showToast('entry saved ✓');
+}
+
+async function deleteJournalEntry(id){
+  if(!confirm('Delete this journal entry?'))return;
+  await supabaseClient.from('journal_entries').delete().eq('id',id);
+  journalEntries=journalEntries.filter(function(e){return e.id!==id;});
+  renderJournal();
+}
+
+function renderJournal(){
+  var el=document.getElementById('journal-entries');
+  if(!el)return;
+  applyJournalFont();
+  // Update char count listener
+  var ta=document.getElementById('journal-input');
+  if(ta&&!ta._hasListener){
+    ta._hasListener=true;
+    ta.addEventListener('input',function(){
+      var len=ta.value.length;
+      document.getElementById('journal-charcount').textContent=len>0?len+' chars':'';
+    });
+  }
+  if(journalEntries.length===0){
+    el.innerHTML='<div class="empty-hist">your journal is empty — write your first entry above ✍️</div>';
+    return;
+  }
+  // Group by date
+  var groups={};
+  journalEntries.forEach(function(e){
+    var dt=new Date(e.created_at);
+    var dStr=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+    if(!groups[dStr])groups[dStr]=[];
+    groups[dStr].push({id:e.id,content:e.content,time:String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'),created_at:e.created_at});
+  });
+  var html='';
+  Object.keys(groups).sort().reverse().forEach(function(dStr){
+    html+='<div class="journal-day-group"><div class="journal-day-label">'+fmtDate(dStr)+'</div>';
+    groups[dStr].forEach(function(e){
+      var escaped=e.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      html+='<div class="journal-entry-card">'
+        +'<div class="journal-entry-time">'+e.time+'</div>'
+        +'<div class="journal-entry-text" style="font-size:'+journalFontSize+'px">'+escaped+'</div>'
+        +'<button class="journal-entry-del" onclick="deleteJournalEntry(\''+e.id+'\')">✕</button>'
+        +'</div>';
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
 // ── Daily Goals (auto-detected) ──────────────────────────────────
 function renderDailyGoals(){
   var el=document.getElementById('daily-goals');
@@ -2095,6 +2220,7 @@ function showPage(name){
     if(name==='health')renderHealth();
     if(name==='dashboard')renderDashboard();
     if(name==='suggestions')loadSuggestions();
+    if(name==='journal')renderJournal();
     if(name==='supplements'){renderDailyGoals();renderSupplements();renderSubstances();}
   }
 }
