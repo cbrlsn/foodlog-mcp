@@ -21,6 +21,15 @@
     --ease:cubic-bezier(.22,.61,.36,1);
     --card-hl:inset 0 1px 0 rgba(255,255,255,0.035);
   }
+  [data-theme="light"]{
+    --bg:#f5f4f0;--bg2:#ffffff;--bg3:#eceae4;--bg4:#dddbd5;
+    --surface:#ffffff;
+    --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.12);--border3:rgba(0,0,0,0.2);
+    --text:#1a1a18;--text2:#5a5955;--text3:#8a8880;
+    --accent:#4a8c10;--accent2:#3d7a0a;--accent-dim:rgba(74,140,16,0.08);--accent-glow:rgba(74,140,16,0.15);
+    --red:#d94444;--amber:#c48a20;--blue:#2e7fc2;--purple:#8a50c4;--teal:#1a9a7a;--water:#3090d0;
+    --card-hl:inset 0 1px 0 rgba(255,255,255,0.7);
+  }
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
   ::selection{background:var(--accent-glow);color:var(--text);}
@@ -592,6 +601,16 @@
         </div>
       </div>
       <div class="settings-section">
+        <h3>appearance</h3>
+        <div class="setting-row">
+          <div><div class="setting-label">Theme</div><div class="setting-sub">switch between dark and light mode</div></div>
+          <select id="theme-select" class="select-input" onchange="setTheme(this.value)">
+            <option value="dark">dark</option>
+            <option value="light">light</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-section">
         <h3>account</h3>
         <div class="setting-row">
           <div><div class="setting-label">Signed in as</div><div class="setting-sub" id="settings-email">—</div></div>
@@ -697,7 +716,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v16.5 · 2026-06-10 18:20';
+var APP_BUILD = 'v17 · 2026-06-10 18:30';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1038,7 +1057,17 @@ function togglePanel(){
 }
 
 // ── Init ──────────────────────────────────────────────────────────
+function setTheme(theme){
+  document.documentElement.setAttribute('data-theme',theme);
+  localStorage.setItem('fl-theme',theme);
+  var sel=document.getElementById('theme-select');
+  if(sel)sel.value=theme;
+}
+
 function init(){
+  // Apply saved theme
+  var savedTheme=localStorage.getItem('fl-theme')||'dark';
+  setTheme(savedTheme);
   ['app-version','auth-version','settings-version'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=APP_BUILD;});
   console.log('foodlog build:',APP_BUILD);
   initSupabase();
@@ -1165,7 +1194,7 @@ RULES:
 - CRITICAL: Your entire response must be valid, complete JSON. Never truncate. If in doubt, use null for nutrients rather than guessing.
 
 Respond ONLY in this exact JSON format, nothing else:
-{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"reply":"string","suggestion":"string|null"}
+{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"reply":"string","suggestion":"string|null"}
 Only populate arrays for what was actually mentioned. Empty arrays [] for the rest.`;
 
   try {
@@ -1268,6 +1297,12 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
         if(upd.sugar_g!=null)patch.sugar=upd.sugar_g;
         if(upd.fibre_g!=null)patch.fibre=upd.fibre_g;
         if(upd.sodium_mg!=null)patch.sodium=upd.sodium_mg;
+        if(upd.volume_ml!=null)patch.volume_ml=upd.volume_ml;
+        if(upd.caffeine_mg!=null)patch.caffeine_mg=upd.caffeine_mg;
+        if(upd.has_dairy!=null)patch.has_dairy=upd.has_dairy;
+        if(upd.has_gluten!=null)patch.has_gluten=upd.has_gluten;
+        if(upd.is_acidic!=null)patch.is_acidic=upd.is_acidic;
+        if(upd.has_alcohol!=null)patch.has_alcohol=upd.has_alcohol;
         if(upd.items)patch.description=upd.items;
         if(upd.note!==undefined)patch.notes=upd.note;
         // Handle time/date updates
@@ -1289,6 +1324,12 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
           if(upd.sugar_g!=null)entries[localIdx].sugar_g=upd.sugar_g;
           if(upd.fibre_g!=null)entries[localIdx].fibre_g=upd.fibre_g;
           if(upd.sodium_mg!=null)entries[localIdx].sodium_mg=upd.sodium_mg;
+          if(upd.volume_ml!=null)entries[localIdx].volume_ml=upd.volume_ml;
+          if(upd.caffeine_mg!=null)entries[localIdx].caffeine_mg=upd.caffeine_mg;
+          if(upd.has_dairy!=null)entries[localIdx].has_dairy=upd.has_dairy;
+          if(upd.has_gluten!=null)entries[localIdx].has_gluten=upd.has_gluten;
+          if(upd.is_acidic!=null)entries[localIdx].is_acidic=upd.is_acidic;
+          if(upd.has_alcohol!=null)entries[localIdx].has_alcohol=upd.has_alcohol;
           if(upd.items)entries[localIdx].items=upd.items;
           if(upd.entry_time)entries[localIdx].time=upd.entry_time;
           if(upd.entry_date)entries[localIdx].date=upd.entry_date;
