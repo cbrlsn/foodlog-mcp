@@ -359,6 +359,35 @@
   #send-btn{box-shadow:0 6px 18px rgba(var(--accent-rgb),0.28);}
   .toast{font-weight:700;letter-spacing:-0.01em;box-shadow:var(--shadow-pop);}
   .setup-card h1{font-weight:700;}
+  /* ── Weekly insights ── */
+  .ins-btn{background:var(--accent);color:var(--on-accent);border:none;border-radius:10px;padding:8px 16px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s var(--ease);box-shadow:0 6px 18px rgba(var(--accent-rgb),0.26);}
+  .ins-btn:hover{background:var(--accent2);}
+  .ins-btn:active{transform:scale(0.97);}
+  .ins-btn:disabled{opacity:0.55;cursor:default;box-shadow:none;}
+  #page-insights>*{max-width:760px;}
+  .ins-empty,.ins-loading{text-align:center;padding:48px 28px;color:var(--text3);font-size:13.5px;line-height:1.6;border:1px dashed var(--border2);border-radius:var(--radius-lg);max-width:680px;margin:0 auto;}
+  .ins-loading-sub{font-size:11px;color:var(--text3);margin-top:8px;opacity:0.8;}
+  .ins-hero{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:26px 28px;margin-bottom:22px;box-shadow:var(--card-hl),var(--shadow-card);}
+  .ins-hero-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+  .ins-headline{font-size:23px;line-height:1.35;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
+  .ins-section{margin-bottom:22px;}
+  .ins-section-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:11px;}
+  .ins-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .ins-chip{background:var(--accent-dim);border:1px solid rgba(var(--accent-rgb),0.22);color:var(--accent);border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:500;line-height:1.4;}
+  .ins-pattern{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:17px 19px;margin-bottom:11px;box-shadow:var(--card-hl),var(--shadow-card);}
+  .ins-pattern-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px;}
+  .ins-pattern-title{font-size:14.5px;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+  .ins-pattern-detail{font-size:13px;line-height:1.6;color:var(--text2);}
+  .ins-conf{font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;flex-shrink:0;}
+  .ins-conf.low{background:var(--bg4);color:var(--text3);}
+  .ins-conf.medium{background:rgba(111,182,245,0.14);color:var(--blue);}
+  .ins-conf.high{background:var(--accent-dim);color:var(--accent);}
+  .ins-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;}
+  .ins-tag{font-size:10px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:3px 9px;letter-spacing:0.02em;}
+  .ins-li{font-size:13px;line-height:1.6;color:var(--text2);padding:10px 16px;border-left:2px solid var(--border3);margin-bottom:8px;background:var(--bg2);border-radius:0 10px 10px 0;}
+  .ins-watch .ins-li{border-left-color:var(--amber);}
+  .ins-exp .ins-li{border-left-color:var(--accent);}
+  .ins-note{font-size:11px;color:var(--text3);line-height:1.6;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
   /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}
@@ -449,6 +478,7 @@
     <div class="nav-item" onclick="showPage('supplements')" id="nav-supplements"><span class="nav-icon">✅</span> daily</div>
     <div class="nav-item" onclick="showPage('suggestions')" id="nav-suggestions"><span class="nav-icon">🍳</span> suggest</div>
     <div class="nav-item" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">📊</span> dashboard</div>
+    <div class="nav-item" onclick="showPage('insights')" id="nav-insights"><span class="nav-icon">✨</span> insights</div>
     <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙️</span> settings</div>
     <div class="sidebar-bottom">
       <div class="sync-indicator" id="sync-status">● connected</div>
@@ -617,6 +647,15 @@
       </div>
       <div class="stats-grid" id="dash-stats"></div>
       <div id="dash-charts"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div id="page-insights" class="page">
+      <div class="page-header">
+        <div class="page-title">✨ insights</div>
+        <button class="ins-btn" id="ins-generate" onclick="generateInsights()">✨ generate</button>
+      </div>
+      <div id="ins-body"></div>
     </div>
 
     <!-- SETTINGS -->
@@ -790,7 +829,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v19 · 2026-06-12 · Nocturne';
+var APP_BUILD = 'v20 · 2026-06-12 · Weekly Insights';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -2235,6 +2274,98 @@ function showDrillDown(date,metric){
   document.getElementById('drilldown-modal').classList.add('open');
 }
 
+// ── Weekly insights ───────────────────────────────────────────────
+function insightsCacheKey(){return 'foodlog_insights_'+(currentUser?currentUser.id:'anon');}
+
+function insLastNDates(n){
+  var out=[];var base=new Date();
+  for(var i=0;i<n;i++){var x=new Date(base.getTime()-i*86400000);out.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'));}
+  return out; // newest first
+}
+
+function buildInsightsPayload(){
+  var dates=insLastNDates(7).reverse(); // oldest first
+  var suppName={};(suppTypes||[]).forEach(function(s){suppName[s.id]=s.name;});
+  var substName={};(substTypes||[]).forEach(function(s){substName[s.id]=s.name;});
+  return dates.map(function(date){
+    var fe=entries.filter(function(e){return e.date===date;});
+    var food=fe.filter(function(e){return e.meal!=='water';});
+    var sum=function(k){return Math.round(food.reduce(function(s,e){return s+(e[k]||0);},0));};
+    var flag=function(k){return food.filter(function(e){return e[k];}).length;};
+    var hydration=Math.round(fe.reduce(function(s,e){return s+(getHydrationMl(e)||0);},0));
+    var acts=activities.filter(function(a){return a.date===date;}).map(function(a){return a.activity_type+(a.duration_min?' '+a.duration_min+'min':'')+(a.distance_km?' '+a.distance_km+'km':'')+(a.intensity?' ('+a.intensity+')':'');});
+    var health=healthEvents.filter(function(h){return h.date===date;}).map(function(h){return h.event_type+(h.severity?' sev'+h.severity:'')+': '+(h.description||'');});
+    var supps=(suppLogs||[]).filter(function(l){return l.date===date;}).map(function(l){return suppName[l.supplement_id]||'supplement';});
+    var substs=(substLogs||[]).filter(function(l){return l.date===date;}).map(function(l){return (substName[l.substance_id]||'substance')+(l.quantity>1?' x'+l.quantity:'');});
+    var w=(weights||[]).filter(function(x){return x.date===date;}).map(function(x){return x.weight_kg;})[0]||null;
+    var jrnl=(journalEntries||[]).filter(function(j){var dt=new Date(j.created_at);var jd=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');return jd===date;}).map(function(j){return (j.content||'').slice(0,220);});
+    return {date:date,kcal:sum('calories'),protein_g:sum('protein_g'),carbs_g:sum('carbs_g'),fat_g:sum('fat_g'),sugar_g:sum('sugar_g'),fibre_g:sum('fibre_g'),sodium_mg:sum('sodium_mg'),caffeine_mg:sum('caffeine_mg'),hydration_ml:hydration,flags:{dairy:flag('has_dairy'),gluten:flag('has_gluten'),acidic:flag('is_acidic'),alcohol:flag('has_alcohol'),nicotine:flag('has_nicotine'),cannabis:flag('has_cannabis')},foods:food.map(function(e){return e.items;}).filter(Boolean).join('; ').slice(0,180),activities:acts,health:health,supplements:supps,substances:substs,weight_kg:w,journal:jrnl};
+  });
+}
+
+function insightsHasEnoughData(days){
+  return days.filter(function(d){return d.kcal>0||d.activities.length||d.health.length||d.journal.length||d.supplements.length;}).length>=2;
+}
+
+function insSection(label){var s=document.createElement('div');s.className='ins-section';var l=document.createElement('div');l.className='ins-section-label';l.textContent=label;s.appendChild(l);return s;}
+
+function renderInsightsResult(payload){
+  var body=document.getElementById('ins-body');if(!body)return;
+  body.innerHTML='';
+  var d=payload.data||{};
+  var hero=document.createElement('div');hero.className='ins-hero';
+  var lbl=document.createElement('div');lbl.className='ins-hero-label';lbl.textContent='This week · '+(payload.range||'');hero.appendChild(lbl);
+  var hl=document.createElement('div');hl.className='ins-headline';hl.textContent=d.headline||'Here is your week.';hero.appendChild(hl);
+  body.appendChild(hero);
+  if(d.highlights&&d.highlights.length){var s=insSection('What went well');var wrap=document.createElement('div');wrap.className='ins-chips';d.highlights.forEach(function(t){var c=document.createElement('div');c.className='ins-chip';c.textContent=t;wrap.appendChild(c);});s.appendChild(wrap);body.appendChild(s);}
+  if(d.patterns&&d.patterns.length){var s2=insSection('Patterns we noticed');d.patterns.forEach(function(p){var card=document.createElement('div');card.className='ins-pattern';var head=document.createElement('div');head.className='ins-pattern-head';var title=document.createElement('div');title.className='ins-pattern-title';title.textContent=p.title||'';var cf=(p.confidence||'low').toLowerCase();if(cf!=='low'&&cf!=='medium'&&cf!=='high')cf='low';var conf=document.createElement('span');conf.className='ins-conf '+cf;conf.textContent=cf;head.appendChild(title);head.appendChild(conf);card.appendChild(head);var det=document.createElement('div');det.className='ins-pattern-detail';det.textContent=p.detail||'';card.appendChild(det);if(p.streams&&p.streams.length){var tags=document.createElement('div');tags.className='ins-tags';p.streams.forEach(function(st){var t=document.createElement('span');t.className='ins-tag';t.textContent=st;tags.appendChild(t);});card.appendChild(tags);}s2.appendChild(card);});body.appendChild(s2);}
+  if(d.watch&&d.watch.length){var s3=insSection('Worth watching');var c1=document.createElement('div');c1.className='ins-card ins-watch';d.watch.forEach(function(t){var r=document.createElement('div');r.className='ins-li';r.textContent=t;c1.appendChild(r);});s3.appendChild(c1);body.appendChild(s3);}
+  if(d.experiments&&d.experiments.length){var s4=insSection('Try next week');var c2=document.createElement('div');c2.className='ins-card ins-exp';d.experiments.forEach(function(t){var r=document.createElement('div');r.className='ins-li';r.textContent=t;c2.appendChild(r);});s4.appendChild(c2);body.appendChild(s4);}
+  var note=document.createElement('div');note.className='ins-note';var when=new Date(payload.generatedAt);note.textContent=(d.data_note?d.data_note+'  ·  ':'')+'Generated '+when.toLocaleString();body.appendChild(note);
+  var btn=document.getElementById('ins-generate');if(btn){btn.textContent='↻ regenerate';btn.disabled=false;}
+}
+
+async function generateInsights(){
+  var btn=document.getElementById('ins-generate');
+  var body=document.getElementById('ins-body');
+  var days=buildInsightsPayload();
+  if(!insightsHasEnoughData(days)){body.innerHTML='';var emp=document.createElement('div');emp.className='ins-empty';emp.textContent='Not much logged this week yet. Log a few days of food, activity or how you feel, then come back — insights need a little data to find patterns.';body.appendChild(emp);return;}
+  if(btn){btn.disabled=true;btn.textContent='reading your week…';}
+  body.innerHTML='<div class="ins-loading">Reading your week and looking for patterns…<div class="ins-loading-sub">first run can take ~40s while the server wakes up</div></div>';
+  var p=userProfile||{};
+  var profileLine='User: '+(p.display_name||'the user')+(p.sex?', '+p.sex:'')+(p.weight_kg?', '+p.weight_kg+'kg':'')+(p.activity?', '+p.activity+' activity':'')+(p.calorie_target?', target ~'+p.calorie_target+' kcal/day':'')+'. Tracks recurring digestive/gut issues.';
+  var sys='You are the weekly insights engine inside a personal health app focused on helping the user FEEL THEIR BEST — not calorie counting. You receive the last 7 days of one user and surface useful patterns.\n\nRules:\n- Use ONLY the data provided. Never invent meals, symptoms, numbers or days that are not there.\n- Look for cross-stream correlations: ingredients and foods (dairy, gluten, acidic, alcohol, caffeine, sugar) versus digestive or stomach or other symptoms; sleep versus energy and mood; activity versus mood and energy; hydration and caffeine timing; alcohol versus next-day feel; weight trend.\n- This is ONE week of self-reported data: correlation is NOT causation and the sample is tiny. Calibrate confidence honestly — most findings should be low or medium. Use high rarely and only when a pattern is strong and repeated.\n- You are not a doctor. No diagnoses, no alarming language. Be warm, specific and useful, like a sharp honest friend.\n- Prefer concrete observable statements (for example: on the 2 days with alcohol, stomach discomfort was logged the next morning) over vague advice.\n- Keep every text field tight. No markdown, no emojis.\n\nReturn STRICT JSON only, no preamble, exactly this shape:\n{"headline":"<=140 char summary of how the week felt","highlights":["2-4 genuine positives"],"patterns":[{"title":"short","detail":"1-2 sentences with the specific evidence","confidence":"low|medium|high","streams":["food|hydration|activity|sleep|mood|symptoms|caffeine|alcohol|supplements|weight"]}],"watch":["1-3 gentle things worth watching"],"experiments":["1-3 concrete things to try next week"],"data_note":"honest one-liner about what is missing or thin in the data"}';
+  var userMsg=profileLine+'\n\nLast 7 days (oldest first), JSON:\n'+JSON.stringify(days);
+  try{
+    var res=await fetch(PROXY_URL+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1600,system:sys,messages:[{role:'user',content:userMsg}]})});
+    if(!res.ok){var er=await res.json();throw new Error(typeof er.error==='object'?JSON.stringify(er.error):(er.error||'Proxy error '+res.status));}
+    var data=await res.json();
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
+    var raw=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    var a=raw.indexOf('{'),z=raw.lastIndexOf('}');
+    var cleaned=a>-1&&z>-1?raw.slice(a,z+1):raw.replace(/```json|```/g,'').trim();
+    var parsed=JSON.parse(cleaned);
+    var range=days[0].date+' → '+days[days.length-1].date;
+    var payload={generatedAt:new Date().toISOString(),range:range,data:parsed};
+    try{localStorage.setItem(insightsCacheKey(),JSON.stringify(payload));}catch(e){}
+    renderInsightsResult(payload);
+  }catch(err){
+    body.innerHTML='';var e2=document.createElement('div');e2.className='ins-empty';e2.textContent='Could not generate insights: '+err.message+'. The server may still be waking up — give it a moment and try again.';body.appendChild(e2);
+    if(btn){btn.disabled=false;btn.textContent='↻ try again';}
+  }
+}
+
+function renderInsights(){
+  var body=document.getElementById('ins-body');if(!body)return;
+  var cached=null;
+  try{var c=localStorage.getItem(insightsCacheKey());if(c)cached=JSON.parse(c);}catch(e){}
+  if(cached&&cached.data){renderInsightsResult(cached);}
+  else{
+    body.innerHTML='';var emp=document.createElement('div');emp.className='ins-empty';emp.textContent='Tap generate to read your last 7 days and surface patterns across your food, activity, mood, hydration and more.';body.appendChild(emp);
+    var btn=document.getElementById('ins-generate');if(btn){btn.textContent='✨ generate';btn.disabled=false;}
+  }
+}
+
 function showPage(name){
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   document.getElementById('nav-'+name).classList.add('active');
@@ -2247,6 +2378,7 @@ function showPage(name){
     if(name==='activity')renderActivity();
     if(name==='health')renderHealth();
     if(name==='dashboard')renderDashboard();
+    if(name==='insights')renderInsights();
     if(name==='suggestions')loadSuggestions();
     if(name==='journal')renderJournal();
     if(name==='supplements'){renderDailyGoals();renderSupplements();renderSubstances();}
