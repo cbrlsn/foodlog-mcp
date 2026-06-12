@@ -93,40 +93,46 @@
   .select-input{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:6px 10px;font-family:'Inter',-apple-system,sans-serif;font-size:11px;outline:none;cursor:pointer;transition:border-color .15s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23615f58'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:26px;}
   .select-input:hover{border-color:var(--border3);}
   .select-input:focus{border-color:var(--accent);}
-  /* ── Log page ── */
-  #page-log{display:none;flex-direction:column;overflow:hidden;flex:1;}
+  /* ── Log page: chat column + right rail ── */
+  #page-log{display:none;flex-direction:row;overflow:hidden;flex:1;min-height:0;}
   #page-log.active{display:flex;animation:pagein .28s var(--ease);}
-  /* ── Nutrient panel ── */
-  #nutrient-panel{background:var(--bg2);border-bottom:1px solid var(--border);overflow:hidden;transition:max-height .35s var(--ease);}
-  #nutrient-panel.collapsed{max-height:38px;}
-  #nutrient-panel.expanded{max-height:420px;}
-  .panel-toggle{display:flex;align-items:center;justify-content:space-between;padding:9px 22px;cursor:pointer;user-select:none;transition:background .15s;}
-  .panel-toggle:hover{background:rgba(255,255,255,0.015);}
-  .panel-toggle-left{display:flex;align-items:center;gap:14px;}
-  .panel-title{font-family:'Inter',-apple-system,sans-serif;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;}
-  .panel-kcal-summary{font-family:'Inter',-apple-system,sans-serif;font-size:12px;color:var(--text2);font-variant-numeric:tabular-nums;}
-  .panel-kcal-summary span{color:var(--accent);}
-  .panel-arrow{font-size:9px;color:var(--text3);transition:transform .25s var(--ease);}
-  #nutrient-panel.expanded .panel-arrow{transform:rotate(180deg);}
-  .nutrient-bars{padding:12px 22px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;}
-  .nbar-row{display:flex;align-items:center;gap:10px;}
-  .nbar-label{font-family:'Inter',-apple-system,sans-serif;font-size:9.5px;color:var(--text3);width:58px;flex-shrink:0;text-align:right;letter-spacing:0.01em;}
+  .chat-col{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+  .today-rail{flex:0 0 316px;width:316px;border-left:1px solid var(--border);background:var(--bg2);overflow-y:auto;padding:18px 16px 28px;display:flex;flex-direction:column;gap:13px;}
+  .rail-greeting-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px 2px;}
+  #today-focus-greeting{font-size:15px;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
+  .today-focus-score{font-size:11px;color:var(--text3);white-space:nowrap;}
+  .rail-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--card-hl);}
+  .rail-card.kcal-card{padding:16px 14px 14px;}
+  .rail-card.hydration-card{cursor:pointer;}
+  .rail-card-title{font-family:'Inter',-apple-system,sans-serif;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;}
+  .rail-close,.rail-toggle{display:none;}
+  /* kcal speedometer gauge */
+  .kcal-gauge{position:relative;width:100%;max-width:226px;margin:0 auto;}
+  .kcal-gauge-svg{width:100%;display:block;overflow:visible;}
+  .kg-track{fill:none;stroke:var(--bg4);stroke-width:15;stroke-linecap:round;}
+  .kg-prog{fill:none;stroke-width:15;stroke-linecap:round;transition:stroke-dashoffset .8s var(--ease),stroke .3s;}
+  .kcal-gauge-center{position:absolute;left:0;right:0;top:60%;transform:translateY(-50%);text-align:center;pointer-events:none;}
+  .kg-num{font-size:30px;font-weight:700;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1;}
+  .kg-sub{font-size:10.5px;color:var(--text3);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .kg-rem{font-size:11px;font-weight:600;margin-top:3px;font-family:'Inter',-apple-system,sans-serif;}
+  /* macro bars (rail, single column) */
+  .nutrient-bars{display:grid;grid-template-columns:1fr;gap:7px;}
+  .nbar-row{display:flex;align-items:center;gap:9px;}
+  .nbar-label{font-family:'Inter',-apple-system,sans-serif;font-size:9.5px;color:var(--text3);width:48px;flex-shrink:0;text-align:right;letter-spacing:0.01em;}
   .nbar-track{flex:1;height:6px;background:var(--bg4);border-radius:6px;overflow:visible;position:relative;}
   .nbar-fill{height:100%;border-radius:6px;transition:width .6s var(--ease);max-width:100%;}
   .nbar-over-marker{position:absolute;top:-3px;right:0;width:2px;height:12px;background:var(--border3);border-radius:1px;}
-  .nbar-value{font-family:'Inter',-apple-system,sans-serif;font-size:9.5px;color:var(--text2);width:56px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;}
-  /* ── Water row ── */
-  #water-bar-row{padding:10px 22px 16px;border-top:1px solid var(--border);}
-  .water-row-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-  .water-row-head .water-label{font-size:9.5px;color:var(--text3);font-family:'Inter',-apple-system,sans-serif;text-transform:uppercase;letter-spacing:0.1em;}
-  #water-summary{font-size:10px;color:var(--text2);font-family:'Inter',-apple-system,sans-serif;font-variant-numeric:tabular-nums;}
-  #water-bottles{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
-  .bottle{display:flex;flex-direction:column;align-items:center;gap:4px;}
-  .bottle-cap{width:10px;height:4px;border-radius:3px 3px 0 0;background:rgba(255,255,255,0.12);}
-  .bottle-body{width:24px;height:34px;border-radius:7px;border:1.5px solid var(--border2);background:rgba(255,255,255,0.02);overflow:hidden;transition:border-color .4s var(--ease);}
-  .bottle-svg{width:100%;height:100%;display:block;}
-  .bottle.full .bottle-body{border-color:rgba(108,184,255,0.5);}
-  .bottle-pct{font-size:8px;color:var(--text3);font-family:'Inter',-apple-system,sans-serif;font-variant-numeric:tabular-nums;}
+  .nbar-value{font-family:'Inter',-apple-system,sans-serif;font-size:9.5px;color:var(--text2);width:50px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;}
+  /* hydration single big bottle */
+  #water-summary{font-size:10px;text-transform:none;letter-spacing:0;color:var(--text2);font-family:'Inter',-apple-system,sans-serif;font-variant-numeric:tabular-nums;}
+  #water-bottles{display:flex;justify-content:center;padding-top:2px;}
+  .big-bottle{display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .big-bottle-cap{width:28px;height:7px;border-radius:4px 4px 0 0;background:rgba(48,144,208,0.3);}
+  .big-bottle-body{position:relative;width:84px;height:128px;border-radius:18px;border:2px solid var(--border2);background:rgba(48,144,208,0.05);overflow:hidden;transition:border-color .4s var(--ease);}
+  .big-bottle.full .big-bottle-body{border-color:rgba(48,144,208,0.55);}
+  .big-bottle-body .bottle-svg{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  .big-bottle-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .bb-pct{font-size:23px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;text-shadow:0 1px 4px rgba(0,0,0,0.28);}
   /* ── Chat ── */
   #chat-messages{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px;width:100%;max-width:860px;margin:0 auto;}
   .msg{display:flex;gap:12px;align-items:flex-start;animation:msgin .25s var(--ease);}
@@ -141,8 +147,8 @@
   .msg-text{font-size:13.5px;line-height:1.7;color:var(--text);overflow-wrap:break-word;}
   .msg-claude .msg-text{max-width:70ch;}
   .msg-text.thinking{color:var(--text3);font-style:italic;}
-  .msg-text.thinking::after{content:'';display:inline-block;width:1ch;animation:dots 1.2s steps(4,end) infinite;}
-  @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
+  .msg-text.thinking::after{content:'...';display:inline-block;width:1.5em;text-align:left;white-space:nowrap;overflow:hidden;vertical-align:baseline;animation:dots 1.4s steps(4,end) infinite;}
+  @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%,100%{content:'...';}}
   .msg-text p{margin-bottom:8px;}.msg-text p:last-child{margin-bottom:0;}
   .msg-text strong{font-weight:600;}
   .msg-text ul,.msg-text ol{padding-left:18px;margin:6px 0 8px;}
@@ -434,13 +440,15 @@
     .nav-icon{font-size:17px;width:auto;}
     .page{padding:18px 14px 28px;}
     .page-header{flex-wrap:wrap;gap:8px;margin-bottom:16px;}
-    .nutrient-bars{grid-template-columns:1fr;gap:5px;padding:8px 14px 12px;}
-    #nutrient-panel.expanded{max-height:70vh;overflow-y:auto;}
-    .panel-toggle{padding:8px 14px;}
-    #water-bar-row{padding:8px 14px 12px;}
+    #page-log{flex-direction:column;}
+    .chat-col{flex:1;min-height:0;}
+    .today-rail{position:fixed;top:0;right:0;bottom:0;width:88%;max-width:340px;z-index:60;transform:translateX(106%);transition:transform .3s var(--ease);box-shadow:-14px 0 44px rgba(0,0,0,0.45);padding-top:calc(20px + env(safe-area-inset-top));border-left:1px solid var(--border2);}
+    .today-rail.rail-open{transform:translateX(0);}
+    .rail-toggle{display:flex;position:fixed;right:14px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:55;width:46px;height:46px;border-radius:50%;background:var(--accent);color:var(--on-accent);border:none;align-items:center;justify-content:center;font-size:19px;box-shadow:0 6px 22px var(--accent-glow);cursor:pointer;}
+    .rail-toggle:active{transform:scale(0.94);}
+    .rail-close{display:flex;align-items:center;justify-content:center;position:absolute;top:10px;right:12px;width:30px;height:30px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);font-size:18px;line-height:1;cursor:pointer;z-index:2;}
     #chat-messages{padding:14px;gap:14px;}
     .subtabs{padding:9px 12px;}
-    .today-focus{padding:14px 14px 4px;}
     #chat-input-area{padding:10px 12px calc(12px + env(safe-area-inset-bottom));}
     #chat-input{font-size:16px;}
     .msg-user .msg-body{max-width:88%;}
@@ -516,39 +524,27 @@
     <div id="subtabs" class="subtabs"></div>
     <!-- LOG PAGE -->
     <div id="page-log" class="active">
-      <div id="today-focus" class="today-focus">
-        <div class="today-focus-head"><span id="today-focus-greeting">Today</span><span id="goals-score" class="today-focus-score"></span></div>
-        <div id="daily-goals" class="today-goals"></div>
-      </div>
-      <!-- Nutrient bars panel -->
-      <div id="nutrient-panel" class="expanded">
-        <div class="panel-toggle" onclick="togglePanel()">
-          <div class="panel-toggle-left">
-            <div class="panel-title">today</div>
-            <div class="panel-kcal-summary" id="panel-kcal-text"><span>0</span> / 2350 kcal</div>
+      <div class="chat-col">
+        <div id="chat-messages">
+          <div class="msg msg-claude">
+            <div class="msg-avatar">ai</div>
+            <div class="msg-body"><div class="msg-text" id="greeting-msg">Hey! 👋 Tell me what you ate, how you moved, or how you're feeling — I'll handle the rest. You can be casual ("had a banana and coffee at 8am") and I'll figure it out.</div></div>
           </div>
-          <div class="panel-arrow">▼</div>
         </div>
-        <div class="nutrient-bars" id="nutrient-bars"></div>
-      <div id="water-bar-row" onclick="initSlosh()">
-        <div class="water-row-head">
-          <span class="water-label">hydration</span>
-          <span id="water-summary">0 / 0 ml</span>
-        </div>
-        <div id="water-bottles"></div>
-      </div>
-      </div>
-      <!-- Chat -->
-      <div id="chat-messages">
-        <div class="msg msg-claude">
-          <div class="msg-avatar">ai</div>
-          <div class="msg-body"><div class="msg-text" id="greeting-msg">Hey! 👋 Tell me what you ate, how you moved, or how you're feeling — I'll handle the rest. You can be casual ("had a banana and coffee at 8am") and I'll figure it out.</div></div>
+        <div id="chat-input-area">
+          <textarea id="chat-input" placeholder="what did you eat, do, or feel today?" rows="1"></textarea>
+          <button id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 16 16"><path d="M1 8L15 1L10 8L15 15L1 8Z"/></svg></button>
         </div>
       </div>
-      <div id="chat-input-area">
-        <textarea id="chat-input" placeholder="what did you eat, do, or feel today?" rows="1"></textarea>
-        <button id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 16 16"><path d="M1 8L15 1L10 8L15 15L1 8Z"/></svg></button>
-      </div>
+      <button class="rail-toggle" id="rail-toggle" onclick="toggleRail()" aria-label="Show today stats">📊</button>
+      <aside class="today-rail" id="today-rail">
+        <button class="rail-close" onclick="toggleRail()" aria-label="Close">×</button>
+        <div class="rail-greeting-row"><span id="today-focus-greeting">Today</span><span id="goals-score" class="today-focus-score"></span></div>
+        <div class="rail-card kcal-card"><div id="kcal-gauge"></div></div>
+        <div class="rail-card"><div class="rail-card-title">today's goals</div><div id="daily-goals" class="today-goals"></div></div>
+        <div class="rail-card"><div class="rail-card-title">macros &amp; limits</div><div class="nutrient-bars" id="nutrient-bars"></div></div>
+        <div class="rail-card hydration-card" onclick="initSlosh()"><div class="rail-card-title">hydration <span id="water-summary">0 / 0 ml</span></div><div id="water-bottles"></div></div>
+      </aside>
     </div>
 
     <!-- JOURNAL -->
@@ -847,7 +843,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v21.1 · 2026-06-12 · Tabs + Today';
+var APP_BUILD = 'v22 · 2026-06-13 · Chat rail + gauge';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -895,24 +891,20 @@ function renderWaterBottles(){
   var el = document.getElementById('water-bottles');
   var summaryEl = document.getElementById('water-summary');
   if(!el) return;
-  summaryEl.textContent = totalMl + ' / ' + target + ' ml';
-  var numBottles = Math.ceil(target / 500);
-  var html = '';
-  for(var i=0; i<numBottles; i++){
-    var filled = Math.min(Math.max(totalMl - i*500, 0), 500);
-    var pct = Math.round((filled/500)*100);
-    var waterColor = pct===100 ? 'rgba(108,184,255,0.85)' : 'rgba(108,184,255,0.7)';
-    html += '<div class="bottle'+(pct===100?' full':'')+'">'
-      + '<div class="bottle-cap"></div>'
-      + '<div class="bottle-body">'
-      + '<svg class="bottle-svg" viewBox="0 0 24 34" preserveAspectRatio="none">'
-      + '<path class="water-path" data-pct="'+pct+'" fill="'+waterColor+'" d="M0,34 L0,34 L24,34 Z"/>'
-      + '</svg>'
-      + '</div>'
-      + '<span class="bottle-pct">'+pct+'%</span>'
-      + '</div>';
-  }
-  el.innerHTML = html;
+  var pctRaw = target>0 ? (totalMl/target)*100 : 0;
+  var pct = Math.min(Math.round(pctRaw), 100);
+  if(summaryEl) summaryEl.textContent = totalMl + ' / ' + target + ' ml';
+  var waterColor = pct>=100 ? 'rgba(48,144,208,0.9)' : 'rgba(48,144,208,0.78)';
+  el.innerHTML =
+      '<div class="big-bottle'+(pct>=100?' full':'')+'">'
+    + '<div class="big-bottle-cap"></div>'
+    + '<div class="big-bottle-body">'
+    + '<svg class="bottle-svg" viewBox="0 0 24 34" preserveAspectRatio="none">'
+    + '<path class="water-path" data-pct="'+pct+'" fill="'+waterColor+'" d="M0,34 L0,34 L24,34 Z"/>'
+    + '</svg>'
+    + '<div class="big-bottle-label"><span class="bb-pct">'+pct+'%</span></div>'
+    + '</div>'
+    + '</div>';
 }
 
 // Nutrient targets
@@ -1182,11 +1174,43 @@ function updateNutrientBars() {
     barsEl.appendChild(row);
   });
   renderWaterBottles();
+  renderKcalGauge();
+}
+
+function renderKcalGauge(){
+  var el=document.getElementById('kcal-gauge');
+  if(!el)return;
+  var t=getTodayTotals();
+  var target=userConfig.calorieTarget||2000;
+  var eaten=Math.round(t.calories||0);
+  var frac=target>0?Math.min(eaten/target,1):0;
+  var over=eaten>target;
+  var R=84, LEN=Math.PI*R;            // semicircle arc length
+  var off=LEN*(1-frac);
+  var col=over?'var(--red)':(eaten>=target*0.85?'var(--accent2)':'var(--accent)');
+  var remain=target-eaten;
+  el.innerHTML=
+      '<div class="kcal-gauge">'
+    + '<svg class="kcal-gauge-svg" viewBox="0 0 200 116">'
+    + '<path class="kg-track" d="M16,108 A84,84 0 0 1 184,108"/>'
+    + '<path class="kg-prog" d="M16,108 A84,84 0 0 1 184,108" style="stroke:'+col+';stroke-dasharray:'+LEN.toFixed(1)+';stroke-dashoffset:'+off.toFixed(1)+'"/>'
+    + '</svg>'
+    + '<div class="kcal-gauge-center">'
+    + '<div class="kg-num" style="color:'+(over?'var(--red)':'var(--text)')+'">'+eaten+'</div>'
+    + '<div class="kg-sub">/ '+target+' kcal</div>'
+    + '<div class="kg-rem" style="color:'+(over?'var(--red)':'var(--text2)')+'">'+(over?Math.abs(remain)+' over':remain+' left')+'</div>'
+    + '</div></div>';
+}
+
+function toggleRail(){
+  var r=document.getElementById('today-rail');
+  if(r)r.classList.toggle('rail-open');
 }
 
 function togglePanel(){
-  panelExpanded=!panelExpanded;
   var p=document.getElementById('nutrient-panel');
+  if(!p)return;
+  panelExpanded=!panelExpanded;
   p.classList.remove('expanded','collapsed');
   p.classList.add(panelExpanded?'expanded':'collapsed');
 }
@@ -1267,7 +1291,7 @@ async function sendMessage(){
   input.value='';input.style.height='auto';
   addMsg('user',text);isThinking=true;
   document.getElementById('send-btn').disabled=true;
-  var thinkEl=addMsg('claude','Thinking...',true);
+  var thinkEl=addMsg('claude','Thinking',true);
 
   var now=new Date();
   var timeStr=now.toTimeString().slice(0,5);
@@ -1815,7 +1839,7 @@ function renderDashboard(){
   chartInstances.water=new Chart(document.getElementById('chart-water'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].water?Math.round(byDay[d].water/100)/10:null;}),backgroundColor:'rgba(100,180,255,0.3)',borderColor:'#64b4ff',borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return Math.round(waterTargetDash/100)/10;}),type:'line',borderColor:'rgba(100,180,255,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:cd});
   chartInstances.cals=new Chart(document.getElementById('chart-cals'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].cals||null;}),backgroundColor:'rgba(200,240,96,0.3)',borderColor:'#c8f060',borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return target;}),type:'line',borderColor:'rgba(200,240,96,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('cals')});
   chartInstances.protein=new Chart(document.getElementById('chart-protein'),{type:'line',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].protein||null;}),borderColor:'#60b0f0',backgroundColor:'rgba(96,176,240,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3},{data:sd.map(function(){return 130;}),borderColor:'rgba(96,176,240,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('protein')});
-  chartInstances.macros=new Chart(document.getElementById('chart-macros'),{type:'line',data:{labels,datasets:[{label:'carbs',data:sd.map(function(d){return byDay[d].carbs||null;}),borderColor:'#f0a830',backgroundColor:'rgba(240,168,48,0.05)',borderWidth:2,pointRadius:2,tension:0.3},{label:'fat',data:sd.map(function(d){return byDay[d].fat||null;}),borderColor:'#ff6b6b',backgroundColor:'rgba(255,107,107,0.05)',borderWidth:2,pointRadius:2,tension:0.3}]},options:Object.assign({},cd,{plugins:Object.assign({},cd.plugins,{legend:{display:true,labels:{color:'#9e9c94',font:{family:'Inter',size:10},boxWidth:10}}})})});
+  chartInstances.macros=new Chart(document.getElementById('chart-macros'),{type:'line',data:{labels,datasets:[{label:'carbs',data:sd.map(function(d){return byDay[d].carbs||null;}),borderColor:'#f0a830',backgroundColor:'rgba(240,168,48,0.05)',borderWidth:2,pointRadius:3,pointHoverRadius:6,tension:0.3},{label:'fat',data:sd.map(function(d){return byDay[d].fat||null;}),borderColor:'#ff6b6b',backgroundColor:'rgba(255,107,107,0.05)',borderWidth:2,pointRadius:3,pointHoverRadius:6,tension:0.3}]},options:Object.assign({},JSON.parse(JSON.stringify(baseCd)),{plugins:Object.assign({},cd.plugins,{legend:{display:true,labels:{color:'#9e9c94',font:{family:'Inter',size:10},boxWidth:10}}}),onClick:function(evt,elems){if(!elems.length)return;var idx=elems[0].index;var date=drilldownDates[idx];if(!date)return;showDrillDown(date,elems[0].datasetIndex===1?'fat':'carbs');}})});
   chartInstances.sugar=new Chart(document.getElementById('chart-sugar'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].sugar||null;}),backgroundColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'rgba(255,107,107,0.5)':'rgba(240,168,48,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].sugar||0)>50?'#ff6b6b':'#f0a830';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 50;}),type:'line',borderColor:'rgba(255,107,107,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('sugar')});
   chartInstances.fibre=new Chart(document.getElementById('chart-fibre'),{type:'line',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].fibre||null;}),borderColor:'#40d0b0',backgroundColor:'rgba(64,208,176,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3},{data:sd.map(function(){return 30;}),borderColor:'rgba(64,208,176,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('fibre')});
   chartInstances.caffeine=new Chart(document.getElementById('chart-caffeine'),{type:'bar',data:{labels,datasets:[{data:sd.map(function(d){return byDay[d].caffeine||null;}),backgroundColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'rgba(255,107,107,0.5)':'rgba(198,133,242,0.3)';}),borderColor:sd.map(function(d){return(byDay[d].caffeine||0)>400?'#ff6b6b':'#c685f2';}),borderWidth:1.5,borderRadius:4},{data:sd.map(function(){return 400;}),type:'line',borderColor:'rgba(198,133,242,0.2)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:chartOptsWithDrill('caffeine')});
