@@ -843,7 +843,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v22 · 2026-06-13 · Chat rail + gauge';
+var APP_BUILD = 'v23 · 2026-06-13 · Supplements in chat';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1324,6 +1324,8 @@ async function sendMessage(){
   if(p.birthday){ var bd=new Date(p.birthday); userAge=Math.floor((Date.now()-bd)/31557600000); }
   var userWeight = p.weight_kg || userConfig.weight || 70;
   var userActivity = p.activity || userConfig.activity || 'lightly active';
+  var suppListContext = (suppTypes||[]).map(function(s){return s.name+(s.default_dose?' ('+s.default_dose+(s.unit||'')+')':'');}).join(', ') || 'none set up';
+  var suppTakenToday = (suppTypes||[]).filter(function(st){return (suppLogs||[]).some(function(l){return l.supplement_id===st.id&&l.date===dateStr;});}).map(function(s){return s.name;}).join(', ') || 'none yet';
 
   var systemPrompt=`You are a personal health assistant for ${userName} (${userSex}, ${userAge}y, ${userWeight}kg, ${userActivity}). Daily targets: ${userConfig.calorieTarget} kcal/day (~${effectiveTarget} today), 130g protein, 280g carbs, 50g fat, 50g sugar max, 30g fibre, 2300mg sodium max.
 
@@ -1338,6 +1340,7 @@ RULES:
 - WATER: meal="water" is ONLY for plain water (tap, still, sparkling). Store the ml amount in the calories field and set ALL other nutrient fields to 0. Estimate ml: glass=250ml, small bottle=330ml, bottle=500ml, large bottle=750ml, 1L bottle=1000ml. Any other liquid (juice, soda, mate, coffee, milk) is meal="drink" with real kcal.
 - VOLUME: For ALL drink and water entries, always set "volume_ml" to the estimated volume in millilitres. Standard sizes: can=330ml, small bottle=330ml, bottle=500ml, large bottle=750ml, glass=250ml, mug=300ml, cup=200ml. Non-alcoholic drinks count toward hydration tracking.
 - WEIGHT: If the user mentions their body weight ("weighed 63.8 today", "I'm 64kg"), set "weight_kg" to that number. Do NOT create a food entry for it.
+- SUPPLEMENTS: ${userName} tracks these supplements SEPARATELY from food: [${suppListContext}]. Already taken today: ${suppTakenToday}. If the user says they took a supplement / "my supplements" / "my vitamins" / "took all of them", put the matching supplement names (use the EXACT names from that list) into the "supplements" array. Do NOT create a food/other entry for supplements. If a supplement they mention isn't in that list (or none are set up), do not log it as food — just acknowledge it in "reply".
 - INGREDIENT FLAGS: For every food entry, auto-tag these fields based on ingredients:
   * caffeine_mg: estimate mg of caffeine (espresso~63mg, drip coffee~95mg, red bull~80mg, mate~30mg, tea~30mg, 0 if none)
   * has_dairy: true if contains milk, cheese, yogurt, butter, cream, whey
@@ -1353,7 +1356,7 @@ RULES:
 - CRITICAL: Your entire response must be valid, complete JSON. Never truncate. If in doubt, use null for nutrients rather than guessing.
 
 Respond ONLY in this exact JSON format, nothing else:
-{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"reply":"string","suggestion":"string|null"}
+{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"supplements":[],"reply":"string","suggestion":"string|null"}
 Only populate arrays for what was actually mentioned. Empty arrays [] for the rest.`;
 
   try {
@@ -1529,8 +1532,29 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
       if(wOk)chips.push({text:'weight · '+parsed.weight_kg+'kg',type:'health'});
     }
 
+    var suppLogged=false;
+    if(parsed.supplements&&parsed.supplements.length){
+      for(var si=0;si<parsed.supplements.length;si++){
+        var sName=(parsed.supplements[si]||'').toString().trim().toLowerCase();
+        if(!sName)continue;
+        var st=(suppTypes||[]).find(function(s){return s.name.toLowerCase()===sName;})
+            || (suppTypes||[]).find(function(s){var n=s.name.toLowerCase();return n.indexOf(sName)>-1||sName.indexOf(n)>-1;});
+        if(!st)continue;
+        if((suppLogs||[]).some(function(l){return l.supplement_id===st.id&&l.date===dateStr;})){
+          chips.push({text:'💊 '+st.name+' · already logged',type:'health'});continue;
+        }
+        var sDose=st.default_dose||null;
+        var {data:savedS,error:errS}=await supabaseClient.from('supplement_logs').insert({user_id:currentUser.id,supplement_id:st.id,dose:sDose,taken_at:new Date().toISOString()}).select().single();
+        if(errS){console.error('Supp insert error:',JSON.stringify(errS));continue;}
+        suppLogs.push({id:savedS?savedS.id:Date.now().toString(36),supplement_id:st.id,dose:sDose,date:dateStr});
+        suppLogged=true;
+        chips.push({text:'💊 '+st.name+(sDose?' · '+sDose+(st.unit||''):''),type:'health'});
+      }
+    }
+
     setSyncStatus('synced','● connected');
     updateNutrientBars();
+    if(suppLogged){renderDailyGoals();if(typeof renderSupplements==='function')renderSupplements();}
 
     var msgEl=thinkEl.querySelector('.msg-text');
     msgEl.innerHTML=formatReply(parsed.reply||'Done!');

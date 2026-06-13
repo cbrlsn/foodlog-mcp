@@ -73,6 +73,11 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // ── MCP Server ────────────────────────────────────────────────────
+// A fresh server is built per SSE connection. The MCP SDK allows only ONE
+// transport per server instance, so a single shared server throws
+// "Already connected to a transport" on the 2nd client and crashes the
+// process. buildServer() gives each connection its own instance.
+function buildServer() {
 const server = new McpServer({
   name: 'foodlog',
   version: '1.0.0',
@@ -209,21 +214,41 @@ server.tool(
   }
 );
 
+  return server;
+}
+
 // ── SSE transport ─────────────────────────────────────────────────
 const transports = {};
 
 app.get('/sse', async (req, res) => {
-  const transport = new SSEServerTransport('/messages', res);
-  transports[transport.sessionId] = transport;
-  res.on('close', () => delete transports[transport.sessionId]);
-  await server.connect(transport);
+  try {
+    const transport = new SSEServerTransport('/messages', res);
+    transports[transport.sessionId] = transport;
+    res.on('close', () => delete transports[transport.sessionId]);
+    // Fresh server per connection so multiple clients can connect safely.
+    const server = buildServer();
+    await server.connect(transport);
+  } catch (err) {
+    console.error('SSE connect error:', err);
+    if (!res.headersSent) res.status(500).end();
+  }
 });
 
 app.post('/messages', async (req, res) => {
-  const sessionId = req.query.sessionId;
-  const transport = transports[sessionId];
-  if (!transport) return res.status(404).json({ error: 'Session not found' });
-  await transport.handlePostMessage(req, res);
+  try {
+    const sessionId = req.query.sessionId;
+    const transport = transports[sessionId];
+    if (!transport) return res.status(404).json({ error: 'Session not found' });
+    await transport.handlePostMessage(req, res);
+  } catch (err) {
+    console.error('Message handling error:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Message error' });
+  }
 });
+
+// Safety net: a stray async error should never crash the whole server
+// (which is what was generating the Render restart emails). Log instead.
+process.on('unhandledRejection', (reason) => console.error('unhandledRejection:', reason));
+process.on('uncaughtException', (err) => console.error('uncaughtException:', err));
 
 app.listen(PORT, () => console.log(`foodlog server running on port ${PORT}`));
