@@ -873,7 +873,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v27 · 2026-06-13 · Saved dishes + iOS icon';
+var APP_BUILD = 'v28 · 2026-06-13 · No second-guess + kcal cleanup';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1249,7 +1249,6 @@ function renderKcalGauge(){
     + '<div class="kcal-gauge-center">'
     + '<div class="kg-num" style="color:'+(over?'var(--red)':'var(--text)')+'">'+eaten+'</div>'
     + '<div class="kg-sub">/ '+target+' kcal</div>'
-    + '<div class="kg-rem" style="color:'+(over?'var(--red)':'var(--text2)')+'">'+(over?Math.abs(remain)+' over':remain+' left')+'</div>'
     + '</div></div>';
 }
 
@@ -1386,6 +1385,7 @@ Recent entries (for edits/corrections):
 [${recentEntriesContext}]
 
 RULES:
+- ALWAYS LOG WHAT THE USER REPORTS. Never refuse to create an entry, and never skip logging, just because a similar item appears in "Recent entries" — people eat the same food more than once a day. That list is ONLY for when the user EXPLICITLY asks to edit/correct a past entry (e.g. "change", "update", "actually it was", "fix"). If they simply say they ate or drank something, create a NEW entry. Never tell the user something was "already logged" or that "no new entry is needed" — just log it.
 - If user mentions a time ("at 8am", "this morning"), use it as entry_time (HH:MM 24h). "Yesterday" = ${yesterdayStr}.
 - For complex meals with many items, log as ONE entry with a combined description. Do NOT split into multiple entries unless the user clearly describes separate meals.
 - WATER: meal="water" is ONLY for plain water (tap, still, sparkling). Store the ml amount in the calories field and set ALL other nutrient fields to 0. Estimate ml: glass=250ml, small bottle=330ml, bottle=500ml, large bottle=750ml, 1L bottle=1000ml. Any other liquid (juice, soda, mate, coffee, milk) is meal="drink" with real kcal.
