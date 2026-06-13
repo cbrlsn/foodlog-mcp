@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0e12'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Inter,sans-serif' font-size='20' font-weight='600' fill='%234ade80'%3Ef%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230c0e12'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Inter,sans-serif' font-size='110' font-weight='600' fill='%234ade80'%3Ef%3C/text%3E%3C/svg%3E">
 <title>foodlog</title>
 <meta name="theme-color" content="#0c0e12">
 <meta name="mobile-web-app-capable" content="yes">
@@ -12,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="foodlog">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -220,6 +219,20 @@
   .del-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:3px 6px;border-radius:6px;opacity:0;transition:opacity .12s,color .12s,background .12s;font-size:12px;}
   .hist-entry:hover .del-btn{opacity:1;}
   .del-btn:hover{color:var(--red);background:rgba(255,122,118,0.1);}
+  .save-meal-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:3px 6px;border-radius:6px;opacity:0;transition:opacity .12s,color .12s;font-size:14px;}
+  .hist-entry:hover .save-meal-btn{opacity:0.7;}
+  .save-meal-btn:hover{opacity:1;color:var(--accent2);}
+  /* saved dishes strip */
+  .saved-meals{margin-bottom:18px;}
+  .saved-title{font-family:'Inter',-apple-system,sans-serif;font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:9px;}
+  .saved-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .saved-chip{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:22px;cursor:pointer;transition:border-color .15s,background .15s,transform .1s;max-width:100%;}
+  .saved-chip:hover{border-color:var(--accent);background:var(--bg4);}
+  .saved-chip:active{transform:scale(0.97);}
+  .saved-chip-name{font-size:12.5px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+  .saved-chip-cal{font-size:10.5px;color:var(--text3);font-variant-numeric:tabular-nums;}
+  .saved-chip-x{background:var(--bg4);border:none;color:var(--text3);width:20px;height:20px;border-radius:50%;font-size:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .saved-chip-x:hover{color:var(--red);background:rgba(255,122,118,0.12);}
   /* ── Dashboard ── */
   .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px;margin-bottom:26px;}
   .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:17px;box-shadow:var(--card-hl);transition:border-color .2s,transform .2s var(--ease);}
@@ -586,6 +599,7 @@
     <!-- FOOD HISTORY -->
     <div id="page-history" class="page">
       <div class="page-header"><div class="page-title">🍽️ food history</div><div class="page-sub" id="hist-count">0 entries</div></div>
+      <div id="saved-meals" class="saved-meals"></div>
       <div id="history-list"></div>
     </div>
 
@@ -859,7 +873,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v26 · 2026-06-13 · PWA (installable + offline)';
+var APP_BUILD = 'v27 · 2026-06-13 · Saved dishes + iOS icon';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -869,7 +883,7 @@ var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 var supabaseClient = null;
 var currentUser = null;
 var userProfile = null; // loaded from Supabase profiles table
-var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [], journalEntries = [];
+var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [], journalEntries = [], savedMeals = [];
 var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:70,height:175,age:25,sex:'male',activity:'light',calorieTarget:2000}));
 var isThinking = false, chartInstances = {};
 var panelExpanded = true;
@@ -1075,7 +1089,7 @@ async function loadAllData() {
   try {
     var cutoff=new Date(Date.now()-90*86400000).toISOString();
     var uid=currentUser.id;
-    var [fe,fa,fh,fw,fs,fsl,fst,fstl,fj]=await Promise.all([
+    var [fe,fa,fh,fw,fs,fsl,fst,fstl,fj,fsm]=await Promise.all([
       supabaseClient.from('entries').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('activities').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('health_events').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
@@ -1084,7 +1098,8 @@ async function loadAllData() {
       supabaseClient.from('supplement_logs').select('*').eq('user_id',uid).gte('taken_at',cutoff).order('taken_at',{ascending:true}),
       supabaseClient.from('substances').select('*').eq('user_id',uid).eq('active',true).order('created_at',{ascending:true}),
       supabaseClient.from('substance_logs').select('*').eq('user_id',uid).gte('logged_at',cutoff).order('logged_at',{ascending:true}),
-      supabaseClient.from('journal_entries').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(50)
+      supabaseClient.from('journal_entries').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(50),
+      supabaseClient.from('saved_meals').select('*').eq('user_id',uid).order('created_at',{ascending:false})
     ]);
     if(fe.error)throw fe.error;
     entries=(fe.data||[]).map(normaliseEntry);
@@ -1096,6 +1111,7 @@ async function loadAllData() {
     substTypes=fst.error?[]:(fst.data||[]);
     substLogs=fstl.error?[]:(fstl.data||[]).map(function(r){var dt=new Date(r.logged_at);return{id:r.id,substance_id:r.substance_id,quantity:r.quantity||1,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
     journalEntries=fj.error?[]:(fj.data||[]);
+    savedMeals=fsm.error?[]:(fsm.data||[]);
     setSyncStatus('synced','● connected');
     updateNutrientBars();
     renderDailyGoals();
@@ -1634,6 +1650,7 @@ function addMsg(role,text,thinking){
 
 // ── Food History ──────────────────────────────────────────────────
 function renderHistory(){
+  renderSavedMeals();
   var list=document.getElementById('history-list');
   document.getElementById('hist-count').textContent=entries.length+' entries';
   if(!entries.length){list.innerHTML='<div class="empty-hist">no food logged yet</div>';return;}
@@ -1654,6 +1671,7 @@ function renderHistory(){
       row.innerHTML='<div class="hist-time">'+(e.time||'')+'</div><div class="hist-meal-badge badge-'+(e.meal||'other')+'">'+(e.meal||'other')+'</div>'
         +'<div class="hist-content"><div class="hist-items">'+e.items+'</div>'+(e.note?'<div class="hist-note">'+e.note+'</div>':'')+'</div>'
         +'<div class="hist-cals">'+calStr+'</div>'
+        +'<button class="save-meal-btn" title="Save as dish" onclick="event.stopPropagation();saveMealFromEntry(\''+e.id+'\')">☆</button>'
         +'<button class="del-btn" onclick="event.stopPropagation();deleteFood(\''+e.id+'\')">✕</button>';
       eDiv.appendChild(row);
     });
@@ -1669,6 +1687,74 @@ function showConfirm(msg){
   });
 }
 async function deleteFood(id){if(!await showConfirm('Delete this?'))return;entries=entries.filter(function(e){return e.id!==id;});if(supabaseClient)await supabaseClient.from('entries').delete().eq('id',id);renderHistory();updateNutrientBars();}
+
+// ── Saved dishes (one-tap re-log) ─────────────────────────────────
+function escSM(s){return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function renderSavedMeals(){
+  var el=document.getElementById('saved-meals');
+  if(!el)return;
+  if(!savedMeals||!savedMeals.length){el.innerHTML='';el.style.display='none';return;}
+  el.style.display='block';
+  var html='<div class="saved-title">⭐ saved dishes · tap to log now</div><div class="saved-chips">';
+  savedMeals.forEach(function(m){
+    html+='<div class="saved-chip" onclick="relogSavedMeal(\''+m.id+'\')">'
+      +'<span class="saved-chip-name">'+escSM(m.name||m.items)+'</span>'
+      +(m.calories?'<span class="saved-chip-cal">~'+m.calories+'</span>':'')
+      +'<button class="saved-chip-x" title="Remove" onclick="event.stopPropagation();deleteSavedMeal(\''+m.id+'\')">✕</button>'
+      +'</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+async function saveMealFromEntry(id){
+  var e=entries.find(function(x){return x.id===id;});
+  if(!e)return;
+  var name=(e.items||'meal').trim().slice(0,48);
+  if((savedMeals||[]).some(function(m){return (m.name||'').toLowerCase()===name.toLowerCase();})){
+    setSyncStatus('synced','● already saved');return;
+  }
+  var payload={user_id:currentUser.id,name:name,meal_type:e.meal,items:e.items,note:e.note||null,
+    calories:e.calories,protein:e.protein_g,carbs:e.carbs_g,fat:e.fat_g,sugar:e.sugar_g,fibre:e.fibre_g,sodium:e.sodium_mg,
+    vitamin_c:e.vitamin_c,vitamin_d:e.vitamin_d,iron:e.iron,calcium:e.calcium,omega3:e.omega3,
+    volume_ml:e.volume_ml,caffeine_mg:e.caffeine_mg,
+    has_dairy:e.has_dairy,has_gluten:e.has_gluten,is_acidic:e.is_acidic,has_alcohol:e.has_alcohol,has_nicotine:e.has_nicotine,has_cannabis:e.has_cannabis};
+  var {data,error}=await supabaseClient.from('saved_meals').insert(payload).select().single();
+  if(error){console.error('save meal error:',JSON.stringify(error));setSyncStatus('error','● save failed');return;}
+  savedMeals.unshift(data);
+  renderSavedMeals();
+  setSyncStatus('synced','● saved "'+name+'"');
+}
+async function relogSavedMeal(id){
+  var sm=(savedMeals||[]).find(function(m){return m.id===id;});
+  if(!sm)return;
+  setSyncStatus('syncing','logging...');
+  var e={meal:sm.meal_type,items:sm.items,note:sm.note||null,raw_input:sm.items,
+    calories:sm.calories,protein_g:sm.protein,carbs_g:sm.carbs,fat_g:sm.fat,
+    sugar_g:sm.sugar,fibre_g:sm.fibre,sodium_mg:sm.sodium,
+    vitamin_c:sm.vitamin_c,vitamin_d:sm.vitamin_d,iron:sm.iron,calcium:sm.calcium,omega3:sm.omega3,
+    volume_ml:sm.volume_ml,caffeine_mg:sm.caffeine_mg,
+    has_dairy:sm.has_dairy,has_gluten:sm.has_gluten,is_acidic:sm.is_acidic,
+    has_alcohol:sm.has_alcohol,has_nicotine:sm.has_nicotine,has_cannabis:sm.has_cannabis};
+  var saved=await saveEntryToSupabase(e);
+  var now=new Date();
+  var localDate=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  entries.unshift({id:saved?saved.id:Date.now().toString(36),date:localDate,time:now.toTimeString().slice(0,5),
+    meal:e.meal,items:e.items,note:e.note,
+    calories:e.calories,protein_g:e.protein_g,carbs_g:e.carbs_g,fat_g:e.fat_g,
+    sugar_g:e.sugar_g,fibre_g:e.fibre_g,sodium_mg:e.sodium_mg,
+    vitamin_c:e.vitamin_c,vitamin_d:e.vitamin_d,iron:e.iron,calcium:e.calcium,omega3:e.omega3,
+    volume_ml:e.volume_ml,caffeine_mg:e.caffeine_mg,
+    has_dairy:e.has_dairy,has_gluten:e.has_gluten,is_acidic:e.is_acidic,
+    has_alcohol:e.has_alcohol,has_nicotine:e.has_nicotine,has_cannabis:e.has_cannabis});
+  renderHistory();updateNutrientBars();
+  setSyncStatus('synced','● logged "'+(sm.name||sm.items)+'"');
+}
+async function deleteSavedMeal(id){
+  if(!await showConfirm('Remove this saved dish?'))return;
+  savedMeals=savedMeals.filter(function(m){return m.id!==id;});
+  if(supabaseClient)await supabaseClient.from('saved_meals').delete().eq('id',id);
+  renderSavedMeals();
+}
 
 // ── Entry Modal ───────────────────────────────────────────────────
 function openEntryModal(entry){
