@@ -316,6 +316,15 @@
   .supp-cal-dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;}
   .supp-cal-dot{width:6px;height:6px;border-radius:50%;opacity:0.2;}
   .supp-cal-dot.taken{opacity:1;}
+  .cal-toggles{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;}
+  .cal-toggle{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--bg3);border:1px solid var(--border2);color:var(--text3);font-size:11.5px;font-weight:500;cursor:pointer;user-select:none;transition:all .15s var(--ease);}
+  .cal-toggle span{font-size:12px;}
+  .cal-toggle:hover{border-color:var(--border3);color:var(--text2);}
+  .cal-toggle.on{background:var(--bg4);font-weight:600;}
+  .cal-toggle:active{transform:scale(0.96);}
+  .supp-cal-day.clickable{cursor:pointer;}
+  .supp-cal-day.clickable:hover{background:var(--bg4);}
+  .supp-cal-day.clickable.today:hover{background:var(--accent-dim);}
   .supp-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;}
   .supp-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-family:'Inter',-apple-system,sans-serif;}
   /* ── Journal ── */
@@ -843,7 +852,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v23 · 2026-06-13 · Supplements in chat';
+var APP_BUILD = 'v24 · 2026-06-13 · Daily tracker calendar';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -2161,11 +2170,45 @@ function renderSupplements(){
   renderSuppCalendar();
 }
 
+// ── Daily tracker calendar (configurable elements) ────────────────
+var CAL_ELEMENTS=[
+  {key:'supps',label:'Supplements',icon:'💊',color:'var(--accent)'},
+  {key:'activity',label:'Activity',icon:'🏃',color:'var(--blue)'},
+  {key:'weight',label:'Weight',icon:'⚖️',color:'var(--purple)'},
+  {key:'hydration',label:'Hydration',icon:'💧',color:'var(--water)'},
+  {key:'food',label:'Food',icon:'🍽️',color:'var(--amber)'}
+];
+function calCfgKey(){return 'foodlog_cal_elements_'+(currentUser?currentUser.id:'anon');}
+function loadCalCfg(){
+  try{var c=localStorage.getItem(calCfgKey());if(c)return JSON.parse(c);}catch(e){}
+  return {supps:true,activity:true,weight:false,hydration:false,food:false};
+}
+function saveCalCfg(cfg){try{localStorage.setItem(calCfgKey(),JSON.stringify(cfg));}catch(e){}}
+function toggleCalElement(key){var cfg=loadCalCfg();cfg[key]=!cfg[key];saveCalCfg(cfg);renderSuppCalendar();}
+
+function calDayState(ds){
+  var dayLogs=(suppLogs||[]).filter(function(l){return l.date===ds;});
+  var suppAll=(suppTypes||[]).length>0&&suppTypes.every(function(st){return dayLogs.some(function(l){return l.supplement_id===st.id;});});
+  var acts=(activities||[]).filter(function(a){return a.date===ds;});
+  var w=(weights||[]).filter(function(x){return x.date===ds;});
+  var food=(entries||[]).filter(function(e){return e.date===ds&&e.meal!=='water';});
+  var ml=(entries||[]).filter(function(e){return e.date===ds;}).reduce(function(s,e){return s+getHydrationMl(e);},0);
+  var tgt=calcWaterTarget(userProfile,acts.length>0);
+  return {
+    supps:{present:suppAll,partial:dayLogs.length>0&&!suppAll},
+    activity:{present:acts.length>0,list:acts},
+    weight:{present:w.length>0,val:w.length?w[0].weight_kg:null},
+    hydration:{present:tgt>0&&ml>=tgt,ml:ml,target:tgt},
+    food:{present:food.length>0,count:food.length,kcal:food.reduce(function(s,e){return s+(e.calories||0);},0)}
+  };
+}
+
 function renderSuppCalendar(){
   var cal=document.getElementById('supp-calendar');
-  if(!cal||suppTypes.length===0){if(cal)cal.innerHTML='';return;}
+  if(!cal)return;
+  var cfg=loadCalCfg();
+  var enabled=CAL_ELEMENTS.filter(function(el){return cfg[el.key];});
   var today=new Date();var todayS=todayStr();
-  // Build 5-week grid ending on this week's Sunday
   var dayOfWeek=today.getDay()||7; // Mon=1..Sun=7
   var endOfWeek=new Date(today);endOfWeek.setDate(today.getDate()+(7-dayOfWeek));
   var startDate=new Date(endOfWeek);startDate.setDate(endOfWeek.getDate()-34);
@@ -2174,31 +2217,81 @@ function renderSuppCalendar(){
     var d=new Date(startDate);d.setDate(startDate.getDate()+i);
     days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
   }
-  var html='<div class="supp-cal-title">last 5 weeks</div><div class="supp-cal-grid">';
+  var html='<div class="supp-cal-title">daily tracker · last 5 weeks</div>';
+  html+='<div class="cal-toggles">';
+  CAL_ELEMENTS.forEach(function(el){
+    var on=!!cfg[el.key];
+    html+='<div class="cal-toggle'+(on?' on':'')+'" onclick="toggleCalElement(\''+el.key+'\')" style="'+(on?'border-color:'+el.color+';color:'+el.color:'')+'"><span>'+el.icon+'</span>'+el.label+'</div>';
+  });
+  html+='</div>';
+  html+='<div class="supp-cal-grid">';
   ['mo','tu','we','th','fr','sa','su'].forEach(function(d){html+='<div class="supp-cal-head">'+d+'</div>';});
   days.forEach(function(ds){
     var isToday=ds===todayS;
     var isFuture=ds>todayS;
-    var dayLogs=suppLogs.filter(function(l){return l.date===ds;});
-    var allTaken=!isFuture&&dayLogs.length>0&&suppTypes.every(function(st){return dayLogs.some(function(l){return l.supplement_id===st.id;});});
-    var cls='supp-cal-day'+(isToday?' today':'')+(isFuture?' future':'')+(allTaken?' complete':'');
+    var st=isFuture?null:calDayState(ds);
+    var allDone=st&&enabled.length>0&&enabled.every(function(el){return st[el.key].present;});
+    var cls='supp-cal-day'+(isToday?' today':'')+(isFuture?' future':'')+(allDone?' complete':'')+(isFuture?'':' clickable');
     var num=parseInt(ds.slice(8));
-    html+='<div class="'+cls+'"><span class="supp-cal-num">'+num+'</span><div class="supp-cal-dots">';
-    suppTypes.forEach(function(st,idx){
-      var taken=dayLogs.some(function(l){return l.supplement_id===st.id;});
-      if(!taken)return; // only show dots for supplements actually taken
-      var color=st.color||suppColor(idx);
-      html+='<div class="supp-cal-dot taken" style="background:'+color+'"></div>';
-    });
+    var click=isFuture?'':' onclick="openDayDetail(\''+ds+'\')"';
+    html+='<div class="'+cls+'"'+click+'><span class="supp-cal-num">'+num+'</span><div class="supp-cal-dots">';
+    if(st){
+      enabled.forEach(function(el){
+        var info=st[el.key];
+        var partialSupp=(el.key==='supps'&&info.partial&&!info.present);
+        if(!info.present&&!partialSupp)return;
+        html+='<div class="supp-cal-dot taken" style="background:'+el.color+(partialSupp?';opacity:0.4':'')+'"></div>';
+      });
+    }
     html+='</div></div>';
   });
   html+='</div>';
   html+='<div class="supp-legend">';
-  suppTypes.forEach(function(st,idx){
-    html+='<div class="supp-legend-item"><div class="supp-cal-dot taken" style="background:'+(st.color||suppColor(idx))+'"></div>'+st.name+'</div>';
+  enabled.forEach(function(el){
+    html+='<div class="supp-legend-item"><div class="supp-cal-dot taken" style="background:'+el.color+'"></div>'+el.label+'</div>';
   });
+  if(!enabled.length)html+='<div class="supp-legend-item" style="color:var(--text3)">tap a chip above to start tracking</div>';
   html+='</div>';
   cal.innerHTML=html;
+}
+
+function openDayDetail(ds){
+  var cfg=loadCalCfg();
+  var enabled=CAL_ELEMENTS.filter(function(el){return cfg[el.key];});
+  var st=calDayState(ds);
+  var rows='';
+  enabled.forEach(function(el){
+    var info=st[el.key];var detail='';
+    if(el.key==='supps'){
+      if((suppTypes||[]).length===0){detail='<span style="color:var(--text3)">no supplements set up</span>';}
+      else{
+        var dayLogs=(suppLogs||[]).filter(function(l){return l.date===ds;});
+        detail=suppTypes.map(function(s){
+          var log=dayLogs.find(function(l){return l.supplement_id===s.id;});
+          return '<span style="color:'+(log?'var(--text)':'var(--text3)')+'">'+(log?'✓':'✗')+' '+s.name+(log&&s.default_dose?' '+s.default_dose+(s.unit||''):'')+'</span>';
+        }).join(' &nbsp; ');
+      }
+    } else if(el.key==='activity'){
+      detail=info.list.length?info.list.map(function(a){return a.activity_type+(a.distance_km?' '+a.distance_km+'km':'')+(a.duration_min?' '+a.duration_min+'min':'')+(a.intensity?' ('+a.intensity+')':'');}).join(', '):'<span style="color:var(--text3)">none</span>';
+    } else if(el.key==='weight'){
+      detail=info.val!=null?info.val+' kg':'<span style="color:var(--text3)">not logged</span>';
+    } else if(el.key==='hydration'){
+      var pct=info.target>0?Math.round(info.ml/info.target*100):0;
+      detail=info.ml+' / '+info.target+' ml ('+pct+'%)';
+    } else if(el.key==='food'){
+      detail=info.count?info.count+' '+(info.count===1?'entry':'entries')+(info.kcal?' · ~'+Math.round(info.kcal)+' kcal':''):'<span style="color:var(--text3)">nothing logged</span>';
+    }
+    var mark=info.present?'✅':(el.key==='supps'&&info.partial?'🟡':'—');
+    rows+='<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);">'
+      +'<div style="font-size:15px;width:22px;text-align:center;flex-shrink:0;">'+el.icon+'</div>'
+      +'<div style="flex:1;min-width:0;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">'+el.label+'</div>'
+      +'<div style="font-size:12.5px;color:var(--text);line-height:1.5;">'+detail+'</div></div>'
+      +'<div style="font-size:13px;flex-shrink:0;">'+mark+'</div></div>';
+  });
+  if(!enabled.length)rows='<div style="color:var(--text3);font-size:12.5px;">No elements selected. Tap the chips on the calendar to choose what to track.</div>';
+  document.getElementById('drilldown-title').textContent=fmtDate(ds);
+  document.getElementById('drilldown-body').innerHTML=rows;
+  document.getElementById('drilldown-modal').classList.add('open');
 }
 
 // ── Substances ────────────────────────────────────────────────────
