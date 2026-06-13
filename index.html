@@ -153,8 +153,11 @@
   .msg-text{font-size:13.5px;line-height:1.7;color:var(--text);overflow-wrap:break-word;}
   .msg-claude .msg-text{max-width:70ch;}
   .msg-text.thinking{color:var(--text3);font-style:italic;}
-  .msg-text.thinking::after{content:'...';display:inline-block;width:1.5em;text-align:left;white-space:nowrap;overflow:hidden;vertical-align:baseline;animation:dots 1.4s steps(4,end) infinite;}
-  @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%,100%{content:'...';}}
+  .tdots{display:inline-flex;gap:3px;margin-left:5px;vertical-align:middle;}
+  .tdots span{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:0.25;animation:tdot 1.2s infinite;}
+  .tdots span:nth-child(2){animation-delay:0.18s;}
+  .tdots span:nth-child(3){animation-delay:0.36s;}
+  @keyframes tdot{0%,60%,100%{opacity:0.22;}30%{opacity:1;}}
   .msg-text p{margin-bottom:8px;}.msg-text p:last-child{margin-bottom:0;}
   .msg-text strong{font-weight:600;}
   .msg-text ul,.msg-text ol{padding-left:18px;margin:6px 0 8px;}
@@ -873,7 +876,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v28 · 2026-06-13 · No second-guess + kcal cleanup';
+var APP_BUILD = 'v29 · 2026-06-13 · Thinking fix + water fast-path';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -1334,12 +1337,53 @@ function formatReply(text){
   return html;
 }
 
+// ── Fast-path: log trivial plain-water entries instantly, no AI round-trip ──
+async function tryFastLog(text){
+  var s=(text||'').toLowerCase().trim();
+  if(!/\bwater\b/.test(s))return false;
+  // bail on anything that isn't unambiguously just water
+  if(/[?]|,| and | with |coffee|tea|juice|soda|mate|milk|beer|wine|cola|coke|smoothie|shake|sparkling|still|hot|warm|lemon|ice/.test(s))return false;
+  var stripped=s.replace(/[0-9.,]/g,' ')
+    .replace(/\b(i|just|had|have|has|got|get|drank|drink|drinking|a|an|the|of|glass|glasses|bottle|bottles|cup|cups|some|now|today|cl|ml|l|dl|liter|litre|litres|liters|big|small|large|tall|sip|sips|more|another|quick|please|plz|log|logged|add)\b/g,' ')
+    .replace(/\s+/g,' ').trim();
+  if(stripped!=='water')return false; // only "(amount) water" survives
+  var ml=estimateVolumeMl(s)||250;
+  return await fastLogWater(ml,text);
+}
+async function fastLogWater(ml,rawText){
+  try{
+    var e={meal:'water',items:ml+'ml water',note:null,raw_input:rawText,
+      calories:ml,protein_g:0,carbs_g:0,fat_g:0,sugar_g:0,fibre_g:0,sodium_mg:0,
+      vitamin_c:0,vitamin_d:0,iron:0,calcium:0,omega3:0,volume_ml:ml,caffeine_mg:0,
+      has_dairy:false,has_gluten:false,is_acidic:false,has_alcohol:false,has_nicotine:false,has_cannabis:false};
+    setSyncStatus('syncing','logging...');
+    var saved=await saveEntryToSupabase(e);
+    var now=new Date();
+    var localDate=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    entries.unshift({id:saved?saved.id:Date.now().toString(36),date:localDate,time:now.toTimeString().slice(0,5),
+      meal:'water',items:ml+'ml water',note:null,
+      calories:ml,protein_g:0,carbs_g:0,fat_g:0,sugar_g:0,fibre_g:0,sodium_mg:0,
+      vitamin_c:0,vitamin_d:0,iron:0,calcium:0,omega3:0,volume_ml:ml,caffeine_mg:0,
+      has_dairy:false,has_gluten:false,is_acidic:false,has_alcohol:false,has_nicotine:false,has_cannabis:false});
+    updateNutrientBars();
+    var hp=document.getElementById('page-history');
+    if(hp&&hp.classList.contains('active'))renderHistory();
+    setSyncStatus('synced','● connected');
+    addMsg('claude','💧 Logged '+ml+'ml of water.',false);
+    return true;
+  }catch(err){
+    console.error('fast log failed, falling back to AI:',err);
+    return false; // let the normal AI path handle it
+  }
+}
 async function sendMessage(){
   if(isThinking)return;
   var input=document.getElementById('chat-input');
   var text=input.value.trim(); if(!text)return;
   input.value='';input.style.height='auto';
-  addMsg('user',text);isThinking=true;
+  addMsg('user',text);
+  if(await tryFastLog(text)){return;}
+  isThinking=true;
   document.getElementById('send-btn').disabled=true;
   var thinkEl=addMsg('claude','Thinking',true);
 
@@ -1644,7 +1688,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
 function addMsg(role,text,thinking){
   var msgs=document.getElementById('chat-messages');
   var div=document.createElement('div');div.className='msg msg-'+role;
-  div.innerHTML='<div class="msg-avatar">'+(role==='claude'?'ai':'me')+'</div><div class="msg-body"><div class="msg-text'+(thinking?' thinking':'')+'">'+( thinking?text:formatReply(text))+'</div></div>';
+  div.innerHTML='<div class="msg-avatar">'+(role==='claude'?'ai':'me')+'</div><div class="msg-body"><div class="msg-text'+(thinking?' thinking':'')+'">'+( thinking?(text+'<span class="tdots"><span></span><span></span><span></span></span>'):formatReply(text))+'</div></div>';
   msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;return div;
 }
 
