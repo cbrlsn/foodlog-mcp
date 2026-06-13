@@ -852,7 +852,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v24 · 2026-06-13 · Daily tracker calendar';
+var APP_BUILD = 'v25 · 2026-06-13 · Drink hydration fix';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -885,9 +885,28 @@ function calcWaterTarget(profile, hadActivity){
 function getHydrationMl(entry){
   // Water: volume_ml if set, else legacy calories field (which stores ml for water)
   if(entry.meal==='water') return entry.volume_ml || entry.calories || 0;
-  // Non-alcoholic drinks contribute their volume
-  if(entry.meal==='drink' && !entry.has_alcohol) return entry.volume_ml || 0;
+  // Non-alcoholic drinks contribute their volume — and always count something
+  if(entry.meal==='drink' && !entry.has_alcohol) return entry.volume_ml || 330;
   return 0;
+}
+
+// Estimate a sane drink volume in ml from free text (units + container words).
+function estimateVolumeMl(text){
+  text=(text||'').toLowerCase();
+  var m=text.match(/(\d+(?:[.,]\d+)?)\s*(ml|cl|dl|liters|litres|liter|litre|l)\b/);
+  if(m){
+    var n=parseFloat(m[1].replace(',','.'));
+    var u=m[2];
+    var ml = u==='ml'?n : u==='cl'?n*10 : u==='dl'?n*100 : n*1000; // l/liter/litre
+    if(ml>0 && ml<=2500) return Math.round(ml); // implausible (e.g. "330cl") falls through
+  }
+  if(/large bottle|big bottle/.test(text)) return 750;
+  if(/bottle|flasche/.test(text)) return 500;
+  if(/\bcan\b|\bdose\b/.test(text)) return 330;
+  if(/glass|glas/.test(text)) return 250;
+  if(/mug|becher/.test(text)) return 300;
+  if(/\bcup\b|tasse/.test(text)) return 200;
+  return 330; // default so a drink always counts toward hydration
 }
 
 function renderWaterBottles(){
@@ -1347,7 +1366,7 @@ RULES:
 - If user mentions a time ("at 8am", "this morning"), use it as entry_time (HH:MM 24h). "Yesterday" = ${yesterdayStr}.
 - For complex meals with many items, log as ONE entry with a combined description. Do NOT split into multiple entries unless the user clearly describes separate meals.
 - WATER: meal="water" is ONLY for plain water (tap, still, sparkling). Store the ml amount in the calories field and set ALL other nutrient fields to 0. Estimate ml: glass=250ml, small bottle=330ml, bottle=500ml, large bottle=750ml, 1L bottle=1000ml. Any other liquid (juice, soda, mate, coffee, milk) is meal="drink" with real kcal.
-- VOLUME: For ALL drink and water entries, always set "volume_ml" to the estimated volume in millilitres. Standard sizes: can=330ml, small bottle=330ml, bottle=500ml, large bottle=750ml, glass=250ml, mug=300ml, cup=200ml. Non-alcoholic drinks count toward hydration tracking.
+- VOLUME (hydration): EVERY drink and water entry MUST have a numeric "volume_ml" (never null, never 0) so it counts toward hydration. Convert units: 1cl=10ml, 1dl=100ml, 1L=1000ml — e.g. "33cl"=330ml, "0.5L"=500ml, "330ml"=330ml. If no size is given, estimate from the container: can=330ml, small bottle=330ml, bottle=500ml, large bottle=750ml, glass=250ml, mug=300ml, cup=200ml. Non-alcoholic drinks (juice, soda, mate, coffee, milk, energy drinks) ALWAYS count toward hydration. Alcoholic drinks do NOT count toward hydration (still set volume_ml, but mark has_alcohol=true).
 - WEIGHT: If the user mentions their body weight ("weighed 63.8 today", "I'm 64kg"), set "weight_kg" to that number. Do NOT create a food entry for it.
 - SUPPLEMENTS: ${userName} tracks these supplements SEPARATELY from food: [${suppListContext}]. Already taken today: ${suppTakenToday}. If the user says they took a supplement / "my supplements" / "my vitamins" / "took all of them", put the matching supplement names (use the EXACT names from that list) into the "supplements" array. Do NOT create a food/other entry for supplements. If a supplement they mention isn't in that list (or none are set up), do not log it as food — just acknowledge it in "reply".
 - INGREDIENT FLAGS: For every food entry, auto-tag these fields based on ingredients:
@@ -1408,6 +1427,11 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
           e.caffeine_mg=0;e.has_dairy=false;e.has_gluten=false;e.is_acidic=false;
           e.has_alcohol=false;e.has_nicotine=false;e.has_cannabis=false;
         }
+        // Hydration safety net: a non-alcoholic drink must ALWAYS carry a sane volume
+        // so it counts toward water — even if Haiku omitted it or sent a typo like "330cl".
+        if(e.meal==='drink' && !e.has_alcohol && (!e.volume_ml || e.volume_ml<=0 || e.volume_ml>2500)){
+          e.volume_ml = estimateVolumeMl((e.items||'')+' '+text);
+        }
         var entryDate=e.entry_date||dateStr;
         var entryTime=e.entry_time||timeStr;
         // Build a fake created_at so Supabase gets the right timestamp
@@ -1439,6 +1463,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
           vitamin_c:localE.vitamin_c,vitamin_d:localE.vitamin_d,
           iron:localE.iron,calcium:localE.calcium,omega3:localE.omega3,
           raw_input:text,created_at:createdAt,
+          volume_ml:localE.volume_ml||null,
           caffeine_mg:localE.caffeine_mg||null,
           has_dairy:localE.has_dairy||false,
           has_gluten:localE.has_gluten||false,
