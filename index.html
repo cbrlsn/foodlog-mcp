@@ -111,6 +111,11 @@
   .rail-card.kcal-card{padding:16px 14px 14px;}
   .rail-card.hydration-card{cursor:pointer;}
   .rail-card-title{font-family:'Inter',-apple-system,sans-serif;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;}
+  .weather-strip{font-size:10px;color:var(--text2);text-transform:none;letter-spacing:0;font-weight:500;white-space:nowrap;}
+  .mood-faces{display:flex;justify-content:space-between;gap:6px;}
+  .mood-face{flex:1;font-size:21px;line-height:1;padding:7px 0;border-radius:11px;background:var(--bg4);border:1px solid transparent;cursor:pointer;text-align:center;opacity:0.5;filter:grayscale(0.45);transition:transform .12s var(--ease),opacity .12s,background .12s,border-color .12s,filter .12s;}
+  .mood-face:hover{transform:translateY(-2px);opacity:0.85;filter:grayscale(0.1);}
+  .mood-face.sel{opacity:1;filter:none;background:var(--bg3);border-color:var(--accent);transform:translateY(-2px);box-shadow:0 0 0 1px var(--accent) inset;}
   .rail-close,.rail-toggle{display:none;}
   /* kcal speedometer gauge */
   .kcal-gauge{position:relative;width:100%;max-width:226px;margin:0 auto;}
@@ -573,6 +578,7 @@
         <button class="rail-close" onclick="toggleRail()" aria-label="Close">×</button>
         <div class="rail-greeting-row"><span id="today-focus-greeting">Today</span><span id="goals-score" class="today-focus-score"></span></div>
         <div class="rail-card kcal-card"><div id="kcal-gauge"></div></div>
+        <div class="rail-card mood-card"><div class="rail-card-title">how are you feeling? <span id="weather-strip" class="weather-strip"></span></div><div id="mood-faces" class="mood-faces"></div></div>
         <div class="rail-card"><div class="rail-card-title">today's goals</div><div id="daily-goals" class="today-goals"></div></div>
         <div class="rail-card"><div class="rail-card-title">macros &amp; limits</div><div class="nutrient-bars" id="nutrient-bars"></div></div>
         <div class="rail-card hydration-card" onclick="initSlosh()"><div class="rail-card-title">hydration <span id="water-summary">0 / 0 ml</span></div><div id="water-bottles"></div></div>
@@ -876,7 +882,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v30 · 2026-06-14 · Chat conversation memory';
+var APP_BUILD = 'v32 · 2026-06-14 · Mood + weather streams';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -886,7 +892,7 @@ var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 var supabaseClient = null;
 var currentUser = null;
 var userProfile = null; // loaded from Supabase profiles table
-var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [], journalEntries = [], savedMeals = [];
+var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [], journalEntries = [], savedMeals = [], moodLogs = [], weatherLogs = [], weatherToday = null;
 var chatHistory = []; // in-session conversation memory sent to the model so it understands "change that", "the water", etc.
 var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:70,height:175,age:25,sex:'male',activity:'light',calorieTarget:2000}));
 var isThinking = false, chartInstances = {};
@@ -1093,7 +1099,7 @@ async function loadAllData() {
   try {
     var cutoff=new Date(Date.now()-90*86400000).toISOString();
     var uid=currentUser.id;
-    var [fe,fa,fh,fw,fs,fsl,fst,fstl,fj,fsm]=await Promise.all([
+    var [fe,fa,fh,fw,fs,fsl,fst,fstl,fj,fsm,fml,fwl]=await Promise.all([
       supabaseClient.from('entries').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('activities').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
       supabaseClient.from('health_events').select('*').eq('user_id',uid).gte('created_at',cutoff).order('created_at',{ascending:false}),
@@ -1103,7 +1109,9 @@ async function loadAllData() {
       supabaseClient.from('substances').select('*').eq('user_id',uid).eq('active',true).order('created_at',{ascending:true}),
       supabaseClient.from('substance_logs').select('*').eq('user_id',uid).gte('logged_at',cutoff).order('logged_at',{ascending:true}),
       supabaseClient.from('journal_entries').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(50),
-      supabaseClient.from('saved_meals').select('*').eq('user_id',uid).order('created_at',{ascending:false})
+      supabaseClient.from('saved_meals').select('*').eq('user_id',uid).order('created_at',{ascending:false}),
+      supabaseClient.from('mood_logs').select('*').eq('user_id',uid).gte('logged_at',cutoff).order('logged_at',{ascending:true}),
+      supabaseClient.from('weather_logs').select('*').eq('user_id',uid).order('log_date',{ascending:true})
     ]);
     if(fe.error)throw fe.error;
     entries=(fe.data||[]).map(normaliseEntry);
@@ -1116,9 +1124,14 @@ async function loadAllData() {
     substLogs=fstl.error?[]:(fstl.data||[]).map(function(r){var dt=new Date(r.logged_at);return{id:r.id,substance_id:r.substance_id,quantity:r.quantity||1,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
     journalEntries=fj.error?[]:(fj.data||[]);
     savedMeals=fsm.error?[]:(fsm.data||[]);
+    moodLogs=fml.error?[]:(fml.data||[]).map(function(r){var dt=new Date(r.logged_at);return{id:r.id,rating:r.rating,note:r.note||null,date:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')};});
+    weatherLogs=fwl.error?[]:(fwl.data||[]);
     setSyncStatus('synced','● connected');
     updateNutrientBars();
     renderDailyGoals();
+    renderMood();
+    renderWeather();
+    loadWeather();
     renderSubtabs('log');
   } catch(err){setSyncStatus('error','● error: '+err.message);console.error(err);}
 }
@@ -1431,6 +1444,7 @@ async function sendMessage(){
   var userActivity = p.activity || userConfig.activity || 'lightly active';
   var suppListContext = (suppTypes||[]).map(function(s){return s.name+(s.default_dose?' ('+s.default_dose+(s.unit||'')+')':'');}).join(', ') || 'none set up';
   var suppTakenToday = (suppTypes||[]).filter(function(st){return (suppLogs||[]).some(function(l){return l.supplement_id===st.id&&l.date===dateStr;});}).map(function(s){return s.name;}).join(', ') || 'none yet';
+  var substListContext = (substTypes||[]).map(function(s){return s.name;}).join(', ') || 'none set up';
 
   var systemPrompt=`You are a personal health assistant for ${userName} (${userSex}, ${userAge}y, ${userWeight}kg, ${userActivity}). Daily targets: ${userConfig.calorieTarget} kcal/day (~${effectiveTarget} today), 130g protein, 280g carbs, 50g fat, 50g sugar max, 30g fibre, 2300mg sodium max.
 
@@ -1447,6 +1461,7 @@ RULES:
 - VOLUME (hydration): EVERY drink and water entry MUST have a numeric "volume_ml" (never null, never 0) so it counts toward hydration. Convert units: 1cl=10ml, 1dl=100ml, 1L=1000ml — e.g. "33cl"=330ml, "0.5L"=500ml, "330ml"=330ml. If no size is given, estimate from the container: can=330ml, small bottle=330ml, bottle=500ml, large bottle=750ml, glass=250ml, mug=300ml, cup=200ml. Non-alcoholic drinks (juice, soda, mate, coffee, milk, energy drinks) ALWAYS count toward hydration. Alcoholic drinks do NOT count toward hydration (still set volume_ml, but mark has_alcohol=true).
 - WEIGHT: If the user mentions their body weight ("weighed 63.8 today", "I'm 64kg"), set "weight_kg" to that number. Do NOT create a food entry for it.
 - SUPPLEMENTS: ${userName} tracks these supplements SEPARATELY from food: [${suppListContext}]. Already taken today: ${suppTakenToday}. If the user says they took a supplement / "my supplements" / "my vitamins" / "took all of them", put the matching supplement names (use the EXACT names from that list) into the "supplements" array. Do NOT create a food/other entry for supplements. If a supplement they mention isn't in that list (or none are set up), do not log it as food — just acknowledge it in "reply".
+- SUBSTANCES: ${userName} also tracks these substances SEPARATELY from food: [${substListContext}]. If the user mentions having one (e.g. a cigarette, snus, vape, beer, wine, cannabis), add an object to the "substances" array as {"name":"<EXACT name from that list>","quantity":<how many, default 1>}. IMPORTANT: an alcoholic DRINK (beer, wine, cocktail, spirits) is BOTH a drink AND a substance — create a normal drink entry (real kcal, volume_ml set, has_alcohol=true, no hydration) AND also add it to "substances". A pure substance (cigarette, snus, vape, smoked cannabis) goes ONLY in "substances" — do NOT create a food/other entry for it. If a substance they mention isn't in that list, do not invent it — just acknowledge it in "reply".
 - INGREDIENT FLAGS: For every food entry, auto-tag these fields based on ingredients:
   * caffeine_mg: estimate mg of caffeine (espresso~63mg, drip coffee~95mg, red bull~80mg, mate~30mg, tea~30mg, 0 if none)
   * has_dairy: true if contains milk, cheese, yogurt, butter, cream, whey
@@ -1462,7 +1477,7 @@ RULES:
 - CRITICAL: Your entire response must be valid, complete JSON. Never truncate. If in doubt, use null for nutrients rather than guessing.
 
 Respond ONLY in this exact JSON format, nothing else:
-{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"supplements":[],"reply":"string","suggestion":"string|null"}
+{"entries":[{"meal":"breakfast|lunch|dinner|snack|drink|water|other","items":"string","note":"string|null","entry_date":"YYYY-MM-DD","entry_time":"HH:MM","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"has_nicotine":false,"has_cannabis":false}],"updates":[{"id":"entry-id-string","entry_date":"YYYY-MM-DD|null","entry_time":"HH:MM|null","calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"sugar_g":0,"fibre_g":0,"sodium_mg":0,"volume_ml":null,"caffeine_mg":0,"has_dairy":false,"has_gluten":false,"is_acidic":false,"has_alcohol":false,"items":"string|null","note":"string|null"}],"activities":[{"activity_type":"run|cycling|gym|walk|sport|other","duration_min":0,"distance_km":0,"calories_burned":0,"intensity":"low|moderate|high","notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"health_events":[{"event_type":"stomach|energy|mood|headache|pain|sleep|symptom","description":"string","severity":1,"notes":"string","entry_date":"YYYY-MM-DD","entry_time":"HH:MM"}],"weight_kg":null,"supplements":[],"substances":[{"name":"string","quantity":1}],"reply":"string","suggestion":"string|null"}
 Only populate arrays for what was actually mentioned. Empty arrays [] for the rest.`;
 
   try {
@@ -1664,9 +1679,28 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
       }
     }
 
+    var substLogged=false;
+    if(parsed.substances&&parsed.substances.length){
+      for(var xi=0;xi<parsed.substances.length;xi++){
+        var rawX=parsed.substances[xi];
+        var xName=((rawX&&rawX.name!==undefined?rawX.name:rawX)||'').toString().trim().toLowerCase();
+        if(!xName)continue;
+        var xQty=Math.max(1,parseInt(rawX&&rawX.quantity,10)||1);
+        var xt=(substTypes||[]).find(function(s){return s.name.toLowerCase()===xName;})
+            || (substTypes||[]).find(function(s){var n=s.name.toLowerCase();return n.indexOf(xName)>-1||xName.indexOf(n)>-1;});
+        if(!xt)continue;
+        var {data:savedX,error:errX}=await supabaseClient.from('substance_logs').insert({user_id:currentUser.id,substance_id:xt.id,quantity:xQty,logged_at:new Date().toISOString()}).select().single();
+        if(errX){console.error('Substance insert error:',JSON.stringify(errX));continue;}
+        substLogs.push({id:savedX?savedX.id:Date.now().toString(36),substance_id:xt.id,quantity:xQty,date:dateStr});
+        substLogged=true;
+        chips.push({text:'🔥 '+xt.name+(xQty>1?' · x'+xQty:''),type:'health'});
+      }
+    }
+
     setSyncStatus('synced','● connected');
     updateNutrientBars();
     if(suppLogged){renderDailyGoals();if(typeof renderSupplements==='function')renderSupplements();}
+    if(substLogged){renderDailyGoals();if(typeof renderSubstances==='function')renderSubstances();}
 
     var msgEl=thinkEl.querySelector('.msg-text');
     msgEl.innerHTML=formatReply(parsed.reply||'Done!');
@@ -2207,6 +2241,96 @@ function renderJournal(){
 }
 
 // ── Daily Goals (auto-detected) ──────────────────────────────────
+var MOOD_FACES=['😞','😕','😐','🙂','😄'];
+var MOOD_LABELS=['rough','low','okay','good','great'];
+function renderMood(){
+  var el=document.getElementById('mood-faces');if(!el)return;
+  var today=todayStr();
+  var cur=(moodLogs||[]).find(function(m){return m.date===today;});
+  el.innerHTML='';
+  for(var i=1;i<=5;i++){
+    (function(r){
+      var b=document.createElement('div');
+      b.className='mood-face'+(cur&&cur.rating===r?' sel':'');
+      b.textContent=MOOD_FACES[r-1];
+      b.title=MOOD_LABELS[r-1];
+      b.setAttribute('role','button');
+      b.setAttribute('aria-label','mood: '+MOOD_LABELS[r-1]);
+      b.onclick=function(){setMood(r);};
+      el.appendChild(b);
+    })(i);
+  }
+}
+async function setMood(rating){
+  if(!currentUser||!supabaseClient)return;
+  var today=todayStr();
+  var existing=(moodLogs||[]).find(function(m){return m.date===today;});
+  if(existing){
+    if(existing.rating===rating){return;}
+    await supabaseClient.from('mood_logs').update({rating:rating,logged_at:new Date().toISOString()}).eq('id',existing.id);
+    existing.rating=rating;
+  } else {
+    var {data,error}=await supabaseClient.from('mood_logs').insert({user_id:currentUser.id,rating:rating,logged_at:new Date().toISOString()}).select().single();
+    if(error){console.error('Mood insert error:',JSON.stringify(error));return;}
+    moodLogs.push({id:data.id,rating:rating,note:null,date:today});
+  }
+  renderMood();renderDailyGoals();
+  if(navigator.vibrate)navigator.vibrate(8);
+}
+
+function weatherDesc(code){
+  if(code==null)return{emoji:'',label:''};
+  if(code===0)return{emoji:'☀️',label:'clear'};
+  if(code<=2)return{emoji:'🌤️',label:'partly cloudy'};
+  if(code===3)return{emoji:'☁️',label:'overcast'};
+  if(code<=48)return{emoji:'🌫️',label:'fog'};
+  if(code<=57)return{emoji:'🌦️',label:'drizzle'};
+  if(code<=67)return{emoji:'🌧️',label:'rain'};
+  if(code<=77)return{emoji:'🌨️',label:'snow'};
+  if(code<=82)return{emoji:'🌧️',label:'showers'};
+  if(code<=86)return{emoji:'🌨️',label:'snow showers'};
+  return{emoji:'⛈️',label:'thunderstorm'};
+}
+function renderWeather(){
+  var el=document.getElementById('weather-strip');if(!el)return;
+  if(!weatherToday){el.textContent='';return;}
+  var w=weatherToday;var wd=weatherDesc(w.weather_code);
+  var t=(w.temp_mean!=null?Math.round(w.temp_mean):(w.temp_max!=null?Math.round(w.temp_max):null));
+  el.textContent=((wd.emoji?wd.emoji+' ':'')+(t!=null?t+'°':'')+(wd.label?' · '+wd.label:'')).trim();
+}
+function getCoords(){
+  return new Promise(function(resolve){
+    try{var c=JSON.parse(localStorage.getItem('foodlog_coords')||'null');if(c&&c.lat!=null&&c.lon!=null){resolve(c);return;}}catch(e){}
+    if(!navigator.geolocation){resolve(null);return;}
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var c={lat:Math.round(pos.coords.latitude*1000)/1000,lon:Math.round(pos.coords.longitude*1000)/1000};
+      try{localStorage.setItem('foodlog_coords',JSON.stringify(c));}catch(e){}
+      resolve(c);
+    },function(){resolve(null);},{timeout:8000,maximumAge:86400000,enableHighAccuracy:false});
+  });
+}
+async function loadWeather(){
+  try{
+    var today=todayStr();
+    var have=(weatherLogs||[]).find(function(w){return w.log_date===today;});
+    if(have){weatherToday=have;renderWeather();return;}
+    var coords=await getCoords();
+    if(!coords)return;
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+coords.lat+'&longitude='+coords.lon+'&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,sunshine_duration&timezone=auto&forecast_days=1';
+    var res=await fetch(url);if(!res.ok)return;var j=await res.json();
+    var d=j.daily;if(!d||!d.time||!d.time.length)return;
+    var g=function(a){return a&&a.length?a[0]:null;};
+    var row={user_id:currentUser?currentUser.id:null,log_date:d.time[0],temp_max:g(d.temperature_2m_max),temp_min:g(d.temperature_2m_min),temp_mean:g(d.temperature_2m_mean),precip_mm:g(d.precipitation_sum),sunshine_hours:(d.sunshine_duration&&d.sunshine_duration.length)?Math.round(d.sunshine_duration[0]/360)/10:null,weather_code:g(d.weather_code),lat:coords.lat,lon:coords.lon};
+    if(supabaseClient&&currentUser){
+      var {data,error}=await supabaseClient.from('weather_logs').upsert(row,{onConflict:'user_id,log_date'}).select().single();
+      if(!error&&data){row.id=data.id;}
+    }
+    weatherToday=row;
+    weatherLogs=(weatherLogs||[]).filter(function(w){return w.log_date!==row.log_date;});weatherLogs.push(row);
+    renderWeather();
+  }catch(e){console.warn('weather load failed',e);}
+}
+
 function renderDailyGoals(){
   var el=document.getElementById('daily-goals');
   var scoreEl=document.getElementById('goals-score');
@@ -2234,6 +2358,9 @@ function renderDailyGoals(){
   // 5. Log food
   var foodDone=entries.some(function(e){return e.date===today&&e.meal!=='water';});
   goals.push({name:'Log food',done:foodDone,detail:foodDone?'done':'not yet',icon:'🍽️',color:'var(--amber)'});
+  // 6. Log mood
+  var moodDone=(moodLogs||[]).some(function(m){return m.date===today;});
+  goals.push({name:'Log mood',done:moodDone,detail:moodDone?'done':'not yet',icon:'🙂',color:'var(--accent)'});
 
   var doneCount=goals.filter(function(g){return g.done;}).length;
   if(scoreEl)scoreEl.textContent=doneCount+'/'+goals.length+' complete';
@@ -2629,7 +2756,7 @@ function insWeekDates(mondayStr){var mon=new Date(mondayStr+'T00:00:00');var tod
 function insWeekLabel(mondayStr){var thisMon=insFmtDate(insMondayOf(new Date()));var diff=Math.round((new Date(thisMon+'T00:00:00')-new Date(mondayStr+'T00:00:00'))/(7*86400000));if(diff===0)return 'This week';if(diff===1)return 'Last week';return new Date(mondayStr+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});}
 function insWeekRange(mondayStr){var mon=new Date(mondayStr+'T00:00:00');var sun=new Date(mon.getTime()+6*86400000);var o={month:'short',day:'numeric'};return mon.toLocaleDateString(undefined,o)+' – '+sun.toLocaleDateString(undefined,o);}
 
-function insDataDates(){var m={};entries.forEach(function(e){m[e.date]=1;});activities.forEach(function(a){m[a.date]=1;});healthEvents.forEach(function(h){m[h.date]=1;});(weights||[]).forEach(function(w){m[w.date]=1;});(suppLogs||[]).forEach(function(l){m[l.date]=1;});(substLogs||[]).forEach(function(l){m[l.date]=1;});(journalEntries||[]).forEach(function(j){m[insFmtDate(new Date(j.created_at))]=1;});return m;}
+function insDataDates(){var m={};entries.forEach(function(e){m[e.date]=1;});activities.forEach(function(a){m[a.date]=1;});healthEvents.forEach(function(h){m[h.date]=1;});(weights||[]).forEach(function(w){m[w.date]=1;});(suppLogs||[]).forEach(function(l){m[l.date]=1;});(substLogs||[]).forEach(function(l){m[l.date]=1;});(moodLogs||[]).forEach(function(l){m[l.date]=1;});(journalEntries||[]).forEach(function(j){m[insFmtDate(new Date(j.created_at))]=1;});return m;}
 function insWeekHasData(mondayStr){var dd=insDataDates();return insWeekDates(mondayStr).some(function(d){return dd[d];});}
 
 function insAvailableWeeks(){
@@ -2657,7 +2784,10 @@ function buildPayloadForDates(dates){
     var substs=(substLogs||[]).filter(function(l){return l.date===date;}).map(function(l){return (substName[l.substance_id]||'substance')+(l.quantity>1?' x'+l.quantity:'');});
     var w=(weights||[]).filter(function(x){return x.date===date;}).map(function(x){return x.weight_kg;})[0]||null;
     var jrnl=(journalEntries||[]).filter(function(j){return insFmtDate(new Date(j.created_at))===date;}).map(function(j){return (j.content||'').slice(0,220);});
-    return {date:date,kcal:sum('calories'),protein_g:sum('protein_g'),carbs_g:sum('carbs_g'),fat_g:sum('fat_g'),sugar_g:sum('sugar_g'),fibre_g:sum('fibre_g'),sodium_mg:sum('sodium_mg'),caffeine_mg:sum('caffeine_mg'),hydration_ml:hydration,flags:{dairy:flag('has_dairy'),gluten:flag('has_gluten'),acidic:flag('is_acidic'),alcohol:flag('has_alcohol'),nicotine:flag('has_nicotine'),cannabis:flag('has_cannabis')},foods:food.map(function(e){return e.items;}).filter(Boolean).join('; ').slice(0,180),activities:acts,health:health,supplements:supps,substances:substs,weight_kg:w,journal:jrnl};
+    var mood=(moodLogs||[]).filter(function(m){return m.date===date;}).map(function(m){return m.rating;})[0]||null;
+    var wrow=(weatherLogs||[]).filter(function(x){return x.log_date===date;})[0];
+    var wthr=wrow?{temp_max:wrow.temp_max,temp_min:wrow.temp_min,precip_mm:wrow.precip_mm,sunshine_h:wrow.sunshine_hours,desc:weatherDesc(wrow.weather_code).label}:null;
+    return {date:date,kcal:sum('calories'),protein_g:sum('protein_g'),carbs_g:sum('carbs_g'),fat_g:sum('fat_g'),sugar_g:sum('sugar_g'),fibre_g:sum('fibre_g'),sodium_mg:sum('sodium_mg'),caffeine_mg:sum('caffeine_mg'),hydration_ml:hydration,flags:{dairy:flag('has_dairy'),gluten:flag('has_gluten'),acidic:flag('is_acidic'),alcohol:flag('has_alcohol'),nicotine:flag('has_nicotine'),cannabis:flag('has_cannabis')},foods:food.map(function(e){return e.items;}).filter(Boolean).join('; ').slice(0,180),activities:acts,health:health,supplements:supps,substances:substs,weight_kg:w,journal:jrnl,mood:mood,weather:wthr};
   });
 }
 
@@ -2688,7 +2818,7 @@ async function generateInsightsForWeek(weekKey,isAuto){
   if(body&&insSelectedWeek===weekKey)body.innerHTML='<div class="ins-loading">Reading '+insWeekLabel(weekKey).toLowerCase()+' and looking for patterns…<div class="ins-loading-sub">first run can take ~40s while the server wakes up</div></div>';
   var p=userProfile||{};
   var profileLine='User: '+(p.display_name||'the user')+(p.sex?', '+p.sex:'')+(p.weight_kg?', '+p.weight_kg+'kg':'')+(p.activity?', '+p.activity+' activity':'')+(p.calorie_target?', target ~'+p.calorie_target+' kcal/day':'')+'. Tracks recurring digestive/gut issues.';
-  var sys='You are the weekly insights engine inside a personal health app focused on helping the user FEEL THEIR BEST — not calorie counting. You receive one calendar week of one user and surface useful patterns.\n\nRules:\n- Use ONLY the data provided. Never invent meals, symptoms, numbers or days that are not there.\n- Look for cross-stream correlations: ingredients and foods (dairy, gluten, acidic, alcohol, caffeine, sugar) versus digestive or stomach or other symptoms; sleep versus energy and mood; activity versus mood and energy; hydration and caffeine timing; alcohol versus next-day feel; weight trend.\n- This is ONE week of self-reported data: correlation is NOT causation and the sample is tiny. Calibrate confidence honestly — most findings should be low or medium. Use high rarely and only when a pattern is strong and repeated.\n- You are not a doctor. No diagnoses, no alarming language. Be warm, specific and useful, like a sharp honest friend.\n- Prefer concrete observable statements (for example: on the 2 days with alcohol, stomach discomfort was logged the next morning) over vague advice.\n- Keep every text field tight. No markdown, no emojis.\n\nReturn STRICT JSON only, no preamble, exactly this shape:\n{"headline":"<=140 char summary of how the week felt","highlights":["2-4 genuine positives"],"patterns":[{"title":"short","detail":"1-2 sentences with the specific evidence","confidence":"low|medium|high","streams":["food|hydration|activity|sleep|mood|symptoms|caffeine|alcohol|supplements|weight"]}],"watch":["1-3 gentle things worth watching"],"experiments":["1-3 concrete things to try next week"],"data_note":"honest one-liner about what is missing or thin in the data"}';
+  var sys='You are the weekly insights engine inside a personal health app focused on helping the user FEEL THEIR BEST — not calorie counting. You receive one calendar week of one user and surface useful patterns.\n\nRules:\n- Use ONLY the data provided. Never invent meals, symptoms, numbers or days that are not there.\n- Look for cross-stream correlations: ingredients and foods (dairy, gluten, acidic, alcohol, caffeine, sugar) versus digestive or stomach or other symptoms; sleep versus energy and mood; activity versus mood and energy; hydration and caffeine timing; alcohol versus next-day feel; weight trend; the daily mood rating (1=rough to 5=great) versus food, activity, hydration and weather; and weather (temperature, sunshine, rain) versus mood and energy.\n- This is ONE week of self-reported data: correlation is NOT causation and the sample is tiny. Calibrate confidence honestly — most findings should be low or medium. Use high rarely and only when a pattern is strong and repeated.\n- You are not a doctor. No diagnoses, no alarming language. Be warm, specific and useful, like a sharp honest friend.\n- Prefer concrete observable statements (for example: on the 2 days with alcohol, stomach discomfort was logged the next morning) over vague advice.\n- Keep every text field tight. No markdown, no emojis.\n\nReturn STRICT JSON only, no preamble, exactly this shape:\n{"headline":"<=140 char summary of how the week felt","highlights":["2-4 genuine positives"],"patterns":[{"title":"short","detail":"1-2 sentences with the specific evidence","confidence":"low|medium|high","streams":["food|hydration|activity|sleep|mood|symptoms|caffeine|alcohol|supplements|weight|weather"]}],"watch":["1-3 gentle things worth watching"],"experiments":["1-3 concrete things to try next week"],"data_note":"honest one-liner about what is missing or thin in the data"}';
   var userMsg='Week analysed: '+insWeekRange(weekKey)+'.\n'+profileLine+'\n\nDays in this week (oldest first), JSON:\n'+JSON.stringify(days);
   try{
     var res=await fetch(PROXY_URL+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1600,system:sys,messages:[{role:'user',content:userMsg}]})});
