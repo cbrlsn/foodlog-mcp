@@ -876,7 +876,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v29 · 2026-06-13 · Thinking fix + water fast-path';
+var APP_BUILD = 'v30 · 2026-06-14 · Chat conversation memory';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -887,6 +887,7 @@ var supabaseClient = null;
 var currentUser = null;
 var userProfile = null; // loaded from Supabase profiles table
 var entries = [], activities = [], healthEvents = [], weights = [], suppTypes = [], suppLogs = [], substTypes = [], substLogs = [], journalEntries = [], savedMeals = [];
+var chatHistory = []; // in-session conversation memory sent to the model so it understands "change that", "the water", etc.
 var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify({weight:70,height:175,age:25,sex:'male',activity:'light',calorieTarget:2000}));
 var isThinking = false, chartInstances = {};
 var panelExpanded = true;
@@ -1341,10 +1342,17 @@ function formatReply(text){
 async function tryFastLog(text){
   var s=(text||'').toLowerCase().trim();
   if(!/\bwater\b/.test(s))return false;
+  // never fast-path a reference/correction ("the water", "change to 300ml", "that one")
+  if(/^(the|that|it|this|change|update|make|set|move|edit|fix|delete|remove|no|actually|both)\b/.test(s))return false;
   // bail on anything that isn't unambiguously just water
   if(/[?]|,| and | with |coffee|tea|juice|soda|mate|milk|beer|wine|cola|coke|smoothie|shake|sparkling|still|hot|warm|lemon|ice/.test(s))return false;
+  // require an actual consumption signal: a quantity, a container, or a drinking verb
+  var hasVolume=/\d/.test(s);
+  var hasContainer=/\b(glass|bottle|cup|sip|sips)\b/.test(s);
+  var hasVerb=/\b(drank|drink|drinking|had|have|having|chugged)\b/.test(s);
+  if(!hasVolume&&!hasContainer&&!hasVerb)return false;
   var stripped=s.replace(/[0-9.,]/g,' ')
-    .replace(/\b(i|just|had|have|has|got|get|drank|drink|drinking|a|an|the|of|glass|glasses|bottle|bottles|cup|cups|some|now|today|cl|ml|l|dl|liter|litre|litres|liters|big|small|large|tall|sip|sips|more|another|quick|please|plz|log|logged|add)\b/g,' ')
+    .replace(/\b(i|just|had|have|has|got|get|drank|drink|drinking|chugged|having|a|an|the|of|glass|glasses|bottle|bottles|cup|cups|some|now|today|cl|ml|l|dl|liter|litre|litres|liters|big|small|large|tall|sip|sips|more|another|quick|please|plz|log|logged|add)\b/g,' ')
     .replace(/\s+/g,' ').trim();
   if(stripped!=='water')return false; // only "(amount) water" survives
   var ml=estimateVolumeMl(s)||250;
@@ -1370,6 +1378,9 @@ async function fastLogWater(ml,rawText){
     if(hp&&hp.classList.contains('active'))renderHistory();
     setSyncStatus('synced','● connected');
     addMsg('claude','💧 Logged '+ml+'ml of water.',false);
+    chatHistory.push({role:'user',content:rawText});
+    chatHistory.push({role:'assistant',content:'Logged '+ml+'ml of water. [just logged: water · '+ml+'ml]'});
+    if(chatHistory.length>16)chatHistory=chatHistory.slice(-16);
     return true;
   }catch(err){
     console.error('fast log failed, falling back to AI:',err);
@@ -1458,7 +1469,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
     var res=await fetch(PROXY_URL+'/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},
-      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:2000,system:systemPrompt,messages:[{role:'user',content:text}]})
+      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:2000,system:systemPrompt,messages:chatHistory.slice(-12).concat([{role:'user',content:text}])})
     });
     if(!res.ok){var e=await res.json();throw new Error(typeof e.error==='object'?JSON.stringify(e.error):(e.error||'Proxy error '+res.status));}
     var data=await res.json();
@@ -1677,6 +1688,11 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
       sg.innerHTML='<span class="suggestion-label">next meal</span>'+parsed.suggestion;
       thinkEl.querySelector('.msg-body').appendChild(sg);
     }
+    // Commit this turn to conversation memory so follow-ups ("change that", "move to yesterday") have context
+    var loggedNote = chips.length ? ' [just logged: '+chips.map(function(c){return c.text;}).join('; ')+']' : '';
+    chatHistory.push({role:'user',content:text});
+    chatHistory.push({role:'assistant',content:(parsed.reply||'Done.')+loggedNote});
+    if(chatHistory.length>16)chatHistory=chatHistory.slice(-16);
   } catch(err){
     thinkEl.querySelector('.msg-text').textContent='Error: '+err.message;
     thinkEl.querySelector('.msg-text').classList.remove('thinking');
