@@ -882,7 +882,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v33 · 2026-06-14 · Chat self-knowledge + persona';
+var APP_BUILD = 'v34 · 2026-06-15 · Chat-page animations';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -898,6 +898,25 @@ var userConfig = JSON.parse(localStorage.getItem('fl-config') || JSON.stringify(
 var isThinking = false, chartInstances = {};
 var panelExpanded = true;
 var authMode = 'signin';
+
+// ── Animation helpers ─────────────────────────────────────────────
+var _reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+function animateValue(from, to, duration, onStep) {
+  from = Number(from); to = Number(to);
+  if (_reducedMotion.matches || from === to) { onStep(to); return; }
+  var start = null;
+  function step(ts) {
+    if (!start) start = ts;
+    var prog = Math.min((ts - start) / duration, 1);
+    var ease = 1 - Math.pow(1 - prog, 3); // ease-out cubic
+    onStep(from + (to - from) * ease);
+    if (prog < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function animateNumber(el, from, to, duration) {
+  animateValue(from, to, duration, function(v) { el.textContent = Math.round(v); });
+}
 
 function calcTDEE(profile){
   var w=profile.weight_kg||70, h=profile.height_cm||175, sex=profile.sex||'male', activity=profile.activity||'light';
@@ -952,18 +971,39 @@ function renderWaterBottles(){
   if(!el) return;
   var pctRaw = target>0 ? (totalMl/target)*100 : 0;
   var pct = Math.min(Math.round(pctRaw), 100);
-  if(summaryEl) summaryEl.textContent = totalMl + ' / ' + target + ' ml';
   var waterColor = pct>=100 ? 'rgba(48,144,208,0.9)' : 'rgba(48,144,208,0.78)';
+
+  // Grab old fill level and ml count before rebuilding
+  var oldPath = el.querySelector('.water-path');
+  var oldPct = oldPath ? parseFloat(oldPath.getAttribute('data-pct')) || 0 : 0;
+  var oldMl = summaryEl ? parseInt(summaryEl.textContent) || 0 : 0;
+
+  // Build HTML starting at old pct so the physics loop sees no jump
   el.innerHTML =
       '<div class="big-bottle'+(pct>=100?' full':'')+'">'
     + '<div class="big-bottle-cap"></div>'
     + '<div class="big-bottle-body">'
     + '<svg class="bottle-svg" viewBox="0 0 24 34" preserveAspectRatio="none">'
-    + '<path class="water-path" data-pct="'+pct+'" fill="'+waterColor+'" d="M0,34 L0,34 L24,34 Z"/>'
+    + '<path class="water-path" data-pct="'+oldPct.toFixed(1)+'" fill="'+waterColor+'" d="M0,34 L0,34 L24,34 Z"/>'
     + '</svg>'
-    + '<div class="big-bottle-label"><span class="bb-pct">'+pct+'%</span></div>'
+    + '<div class="big-bottle-label"><span class="bb-pct" id="bb-pct-num">'+Math.round(oldPct)+'%</span></div>'
     + '</div>'
     + '</div>';
+
+  // Animate data-pct from old to new — renderWaterSVGs reads it every rAF frame
+  var newPath = el.querySelector('.water-path');
+  var pctNumEl = document.getElementById('bb-pct-num');
+  animateValue(oldPct, pct, 700, function(v) {
+    if(newPath) newPath.setAttribute('data-pct', v.toFixed(1));
+    if(pctNumEl) pctNumEl.textContent = Math.round(v) + '%';
+  });
+
+  // Animate the ml summary text
+  if(summaryEl) {
+    animateValue(oldMl, totalMl, 700, function(v) {
+      summaryEl.textContent = Math.round(v) + ' / ' + target + ' ml';
+    });
+  }
 }
 
 // Nutrient targets
@@ -1235,12 +1275,18 @@ function updateNutrientBars() {
     var valStr=val>0?(unit==='mg'||unit==='kcal'?Math.round(val):val)+unit:'—';
     var row=document.createElement('div'); row.className='nbar-row';
     row.innerHTML='<div class="nbar-label">'+b.label+'</div>'
-      +'<div class="nbar-track"><div class="nbar-fill" style="width:'+pct+'%;background:'+barColor+(over?';box-shadow:0 0 6px '+barColor:'')+'"></div>'
+      +'<div class="nbar-track"><div class="nbar-fill" data-pct="'+pct+'" style="width:0%;background:'+barColor+(over?';box-shadow:0 0 6px '+barColor:'')+'"></div>'
       +(over?'<div class="nbar-over-marker"></div>':'')
       +'</div>'
       +'<div class="nbar-value" style="color:'+(over?barColor:'var(--text3)')+'">'+valStr+'</div>';
     barsEl.appendChild(row);
   });
+  // Let layout settle, then animate fills via CSS transition (width 0% → target%)
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    barsEl.querySelectorAll('.nbar-fill').forEach(function(f){
+      var tgt=f.getAttribute('data-pct'); if(tgt!==null) f.style.width=tgt+'%';
+    });
+  }); });
   renderWaterBottles();
   renderKcalGauge();
 }
@@ -1253,20 +1299,42 @@ function renderKcalGauge(){
   var eaten=Math.round(t.calories||0);
   var frac=target>0?Math.min(eaten/target,1):0;
   var over=eaten>target;
-  var R=84, LEN=Math.PI*R;            // semicircle arc length
+  var R=84, LEN=Math.PI*R;
   var off=LEN*(1-frac);
   var col=over?'var(--red)':(eaten>=target*0.85?'var(--accent2)':'var(--accent)');
-  var remain=target-eaten;
-  el.innerHTML=
-      '<div class="kcal-gauge">'
-    + '<svg class="kcal-gauge-svg" viewBox="0 0 200 116">'
-    + '<path class="kg-track" d="M16,108 A84,84 0 0 1 184,108"/>'
-    + '<path class="kg-prog" d="M16,108 A84,84 0 0 1 184,108" style="stroke:'+col+';stroke-dasharray:'+LEN.toFixed(1)+';stroke-dashoffset:'+off.toFixed(1)+'"/>'
-    + '</svg>'
-    + '<div class="kcal-gauge-center">'
-    + '<div class="kg-num" style="color:'+(over?'var(--red)':'var(--text)')+'">'+eaten+'</div>'
-    + '<div class="kg-sub">/ '+target+' kcal</div>'
-    + '</div></div>';
+
+  var prog=el.querySelector('.kg-prog');
+  if(!prog){
+    // Build DOM once; arc starts empty and animates in via CSS transition
+    el.innerHTML=
+        '<div class="kcal-gauge">'
+      + '<svg class="kcal-gauge-svg" viewBox="0 0 200 116">'
+      + '<path class="kg-track" d="M16,108 A84,84 0 0 1 184,108"/>'
+      + '<path class="kg-prog" d="M16,108 A84,84 0 0 1 184,108" style="stroke:'+col+';stroke-dasharray:'+LEN.toFixed(1)+';stroke-dashoffset:'+LEN.toFixed(1)+'"/>'
+      + '</svg>'
+      + '<div class="kcal-gauge-center">'
+      + '<div class="kg-num" style="color:'+(over?'var(--red)':'var(--text)')+'">0</div>'
+      + '<div class="kg-sub">/ '+target+' kcal</div>'
+      + '</div></div>';
+    prog=el.querySelector('.kg-prog');
+    // Let layout settle, then trigger CSS transition on the arc
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      if(prog){ prog.style.strokeDashoffset=off.toFixed(1); prog.style.stroke=col; }
+    }); });
+  } else {
+    // Update existing DOM in-place — CSS transition fires automatically
+    prog.style.strokeDashoffset=off.toFixed(1);
+    prog.style.stroke=col;
+    var subEl=el.querySelector('.kg-sub');
+    if(subEl) subEl.textContent='/ '+target+' kcal';
+  }
+
+  var numEl=el.querySelector('.kg-num');
+  if(numEl){
+    numEl.style.color=over?'var(--red)':'var(--text)';
+    var prevEaten=parseInt(numEl.textContent)||0;
+    animateNumber(numEl, prevEaten, eaten, 700);
+  }
 }
 
 function toggleRail(){
