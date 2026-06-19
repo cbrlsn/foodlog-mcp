@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0e12'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Inter,sans-serif' font-size='20' font-weight='600' fill='%234ade80'%3Ef%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d0b'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Inter,sans-serif' font-size='20' font-weight='600' fill='%235fd9a3'%3Ef%3C/text%3E%3C/svg%3E">
 <title>foodlog</title>
-<meta name="theme-color" content="#0c0e12">
+<meta name="theme-color" content="#0b0d0b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,11 +17,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg:#0c0e12;--bg2:#14171d;--bg3:#1b1f27;--bg4:#232932;
-    --surface:#14171d;
+    --bg:#0b0d0b;--bg2:#121511;--bg3:#181c18;--bg4:#212720;
+    --surface:#121511;
     --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.10);--border3:rgba(255,255,255,0.16);
-    --text:#eceef2;--text2:#9aa1ad;--text3:#5c636f;
-    --accent:#4ade80;--accent2:#3ecf73;--accent-rgb:74,222,128;--on-accent:#04140a;
+    --text:#ecefea;--text2:#9aa39a;--text3:#5e635c;
+    --accent:#5fd9a3;--accent2:#46c389;--accent-rgb:95,217,163;--on-accent:#04130c;
     --accent-dim:rgba(var(--accent-rgb),0.10);--accent-glow:rgba(var(--accent-rgb),0.22);
     --red:#ff7a76;--amber:#f2b04a;--blue:#6fb6f5;--purple:#c685f2;--teal:#4fd6b8;--water:#6cb8ff;
     --radius:12px;--radius-lg:18px;
@@ -31,11 +31,11 @@
     --shadow-pop:0 30px 72px -18px rgba(0,0,0,.72);
   }
   [data-theme="light"]{
-    --bg:#f5f6f8;--bg2:#ffffff;--bg3:#eef0f3;--bg4:#e2e5ea;
+    --bg:#f6f6f3;--bg2:#ffffff;--bg3:#eeefe9;--bg4:#e3e5dd;
     --surface:#ffffff;
     --border:rgba(15,20,30,0.08);--border2:rgba(15,20,30,0.13);--border3:rgba(15,20,30,0.20);
-    --text:#14171d;--text2:#565d68;--text3:#8b929d;
-    --accent:#15a34a;--accent2:#128a3e;--accent-rgb:21,163,74;--on-accent:#ffffff;
+    --text:#161a17;--text2:#56605a;--text3:#8b938b;
+    --accent:#0d8f60;--accent2:#0a7d53;--accent-rgb:13,143,96;--on-accent:#ffffff;
     --accent-dim:rgba(var(--accent-rgb),0.10);--accent-glow:rgba(var(--accent-rgb),0.18);
     --red:#d94444;--amber:#c48a20;--blue:#2e7fc2;--purple:#8a50c4;--teal:#1a9a7a;--water:#3090d0;
     --card-hl:inset 0 1px 0 rgba(255,255,255,0.7);
@@ -61,7 +61,9 @@
   .nav-item:hover{color:var(--text);background:var(--bg3);}
   .nav-item.active{color:var(--accent);background:var(--accent-dim);}
   .nav-item:active{transform:scale(0.985);}
-  .nav-icon{font-size:15px;width:18px;text-align:center;opacity:0.85;}
+  .nav-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;opacity:0.9;flex-shrink:0;}
+  .nav-icon svg{width:18px;height:18px;display:block;}
+  .nav-item.active .nav-icon{opacity:1;}
   .sidebar-bottom{margin-top:auto;padding:0 16px;}
   .profile-block{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:10px;box-shadow:var(--card-hl);}
   .profile-block .name{font-size:13px;font-weight:600;margin-bottom:3px;letter-spacing:0.01em;}
@@ -108,7 +110,9 @@
   #today-focus-greeting{font-size:15px;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
   .today-focus-score{font-size:11px;color:var(--text3);white-space:nowrap;}
   .rail-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--card-hl);}
-  .rail-card.kcal-card{padding:16px 14px 14px;}
+  .rail-card.kcal-card{padding:16px 14px 14px;position:relative;overflow:hidden;}
+  .rail-card.kcal-card::before{content:'';position:absolute;left:50%;top:48%;width:172px;height:172px;transform:translate(-50%,-50%);background:radial-gradient(circle,var(--accent-glow),transparent 70%);opacity:0.5;pointer-events:none;z-index:0;}
+  .rail-card.kcal-card>#kcal-gauge{position:relative;z-index:1;}
   .rail-card.hydration-card{cursor:pointer;}
   .rail-card-title{font-family:'Inter',-apple-system,sans-serif;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;}
   .weather-strip{font-size:10px;color:var(--text2);text-transform:none;letter-spacing:0;font-weight:500;white-space:nowrap;}
@@ -200,7 +204,7 @@
   .hist-entry:hover{background:rgba(255,255,255,0.018);}
   .hist-entry:last-child{border-bottom:none;}
   .hist-time{font-family:'Inter',-apple-system,sans-serif;font-size:10px;color:var(--text3);min-width:36px;padding-top:4px;font-variant-numeric:tabular-nums;}
-  .hist-meal-badge{font-family:'Inter',-apple-system,sans-serif;font-size:9px;padding:3px 8px;border-radius:20px;min-width:54px;text-align:center;flex-shrink:0;margin-top:2px;letter-spacing:0.02em;}
+  .hist-meal-badge{font-family:'Inter',-apple-system,sans-serif;font-size:9px;padding:3px 8px;border-radius:20px;min-width:54px;text-align:center;flex-shrink:0;margin-top:2px;letter-spacing:0.02em;text-transform:capitalize;}
   .badge-breakfast{background:rgba(242,176,74,0.13);color:var(--amber);}
   .badge-lunch{background:rgba(103,214,149,0.13);color:#67d695;}
   .badge-dinner{background:rgba(111,182,245,0.13);color:var(--blue);}
@@ -219,6 +223,7 @@
   .badge-sleep,.badge-symptom{background:var(--bg3);color:var(--text3);}
   .hist-content{flex:1;min-width:0;}
   .hist-items{font-size:13px;color:var(--text);line-height:1.5;}
+  .hist-items::first-letter{text-transform:uppercase;}
   .hist-note{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.4;font-style:italic;}
   .hist-meta{font-size:11px;color:var(--text3);margin-top:3px;font-family:'Inter',-apple-system,sans-serif;}
   .hist-cals{font-family:'Inter',-apple-system,sans-serif;font-size:10px;color:var(--text3);min-width:54px;text-align:right;padding-top:4px;font-variant-numeric:tabular-nums;}
@@ -474,7 +479,8 @@
       justify-content:center;align-items:center;text-align:center;min-width:0;}
     .nav-item.active{border-top-color:var(--accent);background:transparent;}
     .nav-item:active{transform:none;}
-    .nav-icon{font-size:17px;width:auto;}
+    .nav-icon{width:21px;height:21px;}
+    .nav-icon svg{width:21px;height:21px;}
     .page{padding:18px 14px calc(80px + env(safe-area-inset-bottom));}
     .page-header{flex-wrap:wrap;gap:8px;margin-bottom:16px;}
     #page-log{flex-direction:column;}
@@ -517,7 +523,7 @@
 <body>
 <div id="setup-screen" style="display:none">
   <div class="setup-card">
-    <h1>🥗 foodlog</h1>
+    <h1>foodlog</h1>
     <div id="auth-version" style="font-size:9px;color:var(--text3);font-family:'Inter',-apple-system,sans-serif;margin:-4px 0 8px;"></div>
     <p id="auth-subtitle">Sign in to your account.</p>
     <div id="auth-error" style="display:none;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:16px;"></div>
@@ -539,10 +545,10 @@
 <div id="app" style="display:none">
   <div id="sidebar">
     <div class="logo">foodlog<div id="app-version" style="font-size:9px;color:var(--text3);font-weight:300;letter-spacing:0;margin-top:2px;"></div></div>
-    <div class="nav-item active" onclick="showTab('today')" id="tab-today"><span class="nav-icon">☀️</span> today</div>
-    <div class="nav-item" onclick="showTab('body')" id="tab-body"><span class="nav-icon">🫀</span> body</div>
-    <div class="nav-item" onclick="showTab('trends')" id="tab-trends"><span class="nav-icon">✨</span> insights</div>
-    <div class="nav-item" onclick="showTab('profile')" id="tab-profile"><span class="nav-icon">⚙️</span> profile</div>
+    <div class="nav-item active" onclick="showTab('today')" id="tab-today"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span> Today</div>
+    <div class="nav-item" onclick="showTab('body')" id="tab-body"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.35-7-9.5A3.5 3.5 0 0 1 12 7a3.5 3.5 0 0 1 7 3.5C19 15.65 12 20 12 20z"/></svg></span> Body</div>
+    <div class="nav-item" onclick="showTab('trends')" id="tab-trends"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-8"/><path d="M16 7h4v4"/></svg></span> Insights</div>
+    <div class="nav-item" onclick="showTab('profile')" id="tab-profile"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span> Profile</div>
     <div class="sidebar-bottom">
       <div class="sync-indicator" id="sync-status">● connected</div>
       <div class="profile-block">
@@ -573,7 +579,7 @@
           <button id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 16 16"><path d="M1 8L15 1L10 8L15 15L1 8Z"/></svg></button>
         </div>
       </div>
-      <button class="rail-toggle" id="rail-toggle" onclick="toggleRail()" aria-label="Show today stats">📊</button>
+      <button class="rail-toggle" id="rail-toggle" onclick="toggleRail()" aria-label="Show today stats"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="6" y="11" width="3.2" height="7" rx="1"/><rect x="14.8" y="6" width="3.2" height="12" rx="1"/></svg></button>
       <aside class="today-rail" id="today-rail">
         <button class="rail-close" onclick="toggleRail()" aria-label="Close">×</button>
         <div class="rail-greeting-row"><span id="today-focus-greeting">Today</span><span id="goals-score" class="today-focus-score"></span></div>
@@ -588,7 +594,7 @@
     <!-- JOURNAL -->
     <div id="page-journal" class="page journal-page">
       <div class="journal-header">
-        <div class="page-title">📓 journal</div>
+        <div class="page-title">Journal</div>
         <div class="journal-font-ctrl">
           <button class="journal-font-btn" onclick="setJournalFont(-1)">A−</button>
           <button class="journal-font-btn" onclick="setJournalFont(0)">A</button>
@@ -607,21 +613,21 @@
 
     <!-- FOOD HISTORY -->
     <div id="page-history" class="page">
-      <div class="page-header"><div class="page-title">🍽️ food history</div><div class="page-sub" id="hist-count">0 entries</div></div>
+      <div class="page-header"><div class="page-title">Food history</div><div class="page-sub" id="hist-count">0 entries</div></div>
       <div id="saved-meals" class="saved-meals"></div>
       <div id="history-list"></div>
     </div>
 
     <!-- ACTIVITY -->
     <div id="page-activity" class="page">
-      <div class="page-header"><div class="page-title">🏃 activity</div><div class="page-sub" id="activity-count">0 sessions</div></div>
+      <div class="page-header"><div class="page-title">Activity</div><div class="page-sub" id="activity-count">0 sessions</div></div>
       <div class="activity-summary" id="activity-summary"></div>
       <div id="activity-list"></div>
     </div>
 
     <!-- HEALTH -->
     <div id="page-health" class="page">
-      <div class="page-header"><div class="page-title">❤️ health log</div><div class="page-sub" id="health-count">0 events</div></div>
+      <div class="page-header"><div class="page-title">Health log</div><div class="page-sub" id="health-count">0 events</div></div>
       <div class="health-summary" id="health-summary"></div>
       <div id="health-list"></div>
     </div>
@@ -629,7 +635,7 @@
     <!-- DAILY (goals + supplements + substances) -->
     <div id="page-supplements" class="page">
       <div class="page-header">
-        <div class="page-title">💊 supplements</div>
+        <div class="page-title">Supplements</div>
         <button class="btn-save" onclick="toggleSuppForm()" id="supp-add-btn">+ add</button>
       </div>
       <div class="supp-add-form" id="supp-add-form">
@@ -649,7 +655,7 @@
 
       <div style="margin-top:32px;">
         <div class="page-header">
-          <div class="page-title">🔥 substances</div>
+          <div class="page-title">Substances</div>
           <button class="btn-save" onclick="toggleSubstForm()" id="subst-add-btn">+ add</button>
         </div>
         <div class="supp-add-form" id="subst-add-form">
@@ -682,7 +688,7 @@
     <!-- SUGGESTIONS -->
     <div id="page-suggestions" class="page">
       <div class="page-header">
-        <div class="page-title">🍳 what to eat</div>
+        <div class="page-title">What to eat</div>
         <button class="btn-save" onclick="loadSuggestions()">↻ refresh</button>
       </div>
       <div id="suggest-context" class="suggest-context"></div>
@@ -692,7 +698,7 @@
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page">
       <div class="page-header">
-        <div class="page-title">📊 dashboard</div>
+        <div class="page-title">Dashboard</div>
         <select id="dash-range" onchange="renderDashboard()" class="select-input">
           <option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>
         </select>
@@ -704,8 +710,8 @@
     <!-- INSIGHTS -->
     <div id="page-insights" class="page">
       <div class="page-header">
-        <div class="page-title">✨ insights</div>
-        <button class="ins-btn" id="ins-generate" onclick="generateSelectedWeek()">✨ generate</button>
+        <div class="page-title">Insights</div>
+        <button class="ins-btn" id="ins-generate" onclick="generateSelectedWeek()">Generate</button>
       </div>
       <div id="ins-weeks" class="ins-weeks"></div>
       <div id="ins-body"></div>
@@ -713,7 +719,7 @@
 
     <!-- SETTINGS -->
     <div id="page-settings" class="page">
-      <div class="page-header"><div class="page-title">⚙️ settings</div></div>
+      <div class="page-header"><div class="page-title">Settings</div></div>
       <div class="settings-section">
         <h3>profile</h3>
         <div class="setting-row">
@@ -882,7 +888,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v33 · 2026-06-14 · Chat self-knowledge + persona';
+var APP_BUILD = 'v36 · 2026-06-19 · Sage palette + de-slop + substance date/qty fix';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -2391,7 +2397,7 @@ function renderDailyGoals(){
 }
 
 // ── Supplements ───────────────────────────────────────────────────
-var SUPP_COLORS=['#4ade80','#f2b04a','#6fb6f5','#c685f2','#4fd6b8','#ff7a76','#67d6f0','#67d695'];
+var SUPP_COLORS=['#5fd9a3','#f2b04a','#6fb6f5','#c685f2','#4fd6b8','#ff7a76','#67d6f0','#67d695'];
 function suppColor(idx){return SUPP_COLORS[idx%SUPP_COLORS.length];}
 function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
@@ -2857,7 +2863,7 @@ function selectWeek(weekKey){
   insSelectedWeek=weekKey;renderWeekChips();
   var cache=insLoadCache();var body=document.getElementById('ins-body');var btn=document.getElementById('ins-generate');
   if(cache[weekKey]){renderInsightsResult(cache[weekKey]);}
-  else if(body){body.innerHTML='';var emp=document.createElement('div');emp.className='ins-empty';emp.textContent=insWeekHasData(weekKey)?('No insights for '+insWeekLabel(weekKey).toLowerCase()+' yet. Tap generate.'):('Nothing logged in '+insWeekLabel(weekKey).toLowerCase()+'.');body.appendChild(emp);if(btn){btn.disabled=false;btn.textContent='✨ generate';}}
+  else if(body){body.innerHTML='';var emp=document.createElement('div');emp.className='ins-empty';emp.textContent=insWeekHasData(weekKey)?('No insights for '+insWeekLabel(weekKey).toLowerCase()+' yet. Tap generate.'):('Nothing logged in '+insWeekLabel(weekKey).toLowerCase()+'.');body.appendChild(emp);if(btn){btn.disabled=false;btn.textContent='Generate';}}
 }
 
 function renderWeekChips(){
@@ -3039,7 +3045,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 <style>
   #pwa-update{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:12px;background:var(--bg3,#1b1f27);border:1px solid var(--border2,rgba(255,255,255,0.1));border-radius:24px;padding:9px 9px 9px 16px;box-shadow:0 8px 30px rgba(0,0,0,0.45);font-family:'Inter',sans-serif;font-size:13px;color:var(--text,#fff);}
-  #pwa-update button{background:var(--accent,#4ade80);color:var(--on-accent,#08130c);border:none;border-radius:18px;padding:7px 14px;font-weight:600;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
+  #pwa-update button{background:var(--accent,#5fd9a3);color:var(--on-accent,#08130c);border:none;border-radius:18px;padding:7px 14px;font-weight:600;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
 </style>
 <script>
 (function(){
