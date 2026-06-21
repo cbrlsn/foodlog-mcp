@@ -53,7 +53,7 @@
     --shadow-pop:0 30px 72px -18px rgba(30,24,10,.22);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:-0.005em;}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:-0.005em;overflow-x:hidden;}
   ::selection{background:var(--accent-glow);color:var(--text);}
   /* ── Scrollbars ── */
   *::-webkit-scrollbar{width:10px;height:10px;}
@@ -102,7 +102,7 @@
   .setup-note{font-size:11px;color:var(--text3);margin-top:14px;text-align:center;}
   .setup-note u{cursor:pointer;}
   /* ── Pages ── */
-  .page{display:none;flex:1;overflow-y:auto;padding:40px 40px 140px;min-height:0;background:var(--bg);}
+  .page{display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:40px 40px 140px;min-height:0;background:var(--bg);}
   .page.active{display:block;animation:pagein .28s var(--ease);}
   .page>*{max-width:1060px;margin-left:auto;margin-right:auto;}
   @keyframes pagein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
@@ -115,7 +115,7 @@
   .select-input:hover{border-color:var(--border3);background-color:var(--bg4);}
   .select-input:focus-visible{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
   /* ── Today: one continuous vertical scroll ── */
-  #page-log{display:none;overflow-y:auto;min-height:0;position:relative;}
+  #page-log{display:none;overflow-y:auto;overflow-x:hidden;min-height:0;position:relative;}
   #page-log.active{display:block;animation:pagein .28s var(--ease);}
   #page-log::before{content:'';position:absolute;left:50%;top:-60px;width:680px;height:460px;max-width:96vw;transform:translateX(-50%);background:radial-gradient(ellipse at center,var(--accent-glow),transparent 72%);pointer-events:none;z-index:0;animation:breathe 12s ease-in-out infinite;}
   .today-wrap{position:relative;z-index:1;max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding:26px 22px calc(120px + env(safe-area-inset-bottom));}
@@ -505,11 +505,11 @@
   .ins-week-chip.has-data .dot{background:var(--accent);opacity:1;}
   .ins-week-chip.active .dot{background:var(--accent);opacity:1;}
   /* ── Sub-tabs + Today focus ── */
-  .subtabs{flex:0 0 auto;display:flex;gap:6px;padding:12px 28px;border-bottom:1px solid var(--border);overflow-x:auto;background:var(--bg2);scrollbar-width:none;}
+  .subtabs{flex:0 0 auto;display:flex;gap:8px;padding:16px 40px 6px;overflow-x:auto;background:transparent;scrollbar-width:none;}
   .subtabs::-webkit-scrollbar{display:none;}
-  .subtab{flex:0 0 auto;padding:7px 15px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s var(--ease);user-select:none;}
-  .subtab:hover{background:var(--bg3);color:var(--text);}
-  .subtab.active{background:var(--accent-dim);color:var(--accent);font-weight:600;}
+  .subtab{flex:0 0 auto;padding:7px 15px;border-radius:20px;background:var(--bg2);border:1px solid var(--border);font-size:12.5px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s var(--ease);user-select:none;box-shadow:var(--card-hl);}
+  .subtab:hover{border-color:var(--border2);color:var(--text);}
+  .subtab.active{background:var(--accent-dim);border-color:rgba(var(--accent-rgb),0.4);color:var(--accent);font-weight:600;}
   .today-focus{flex:0 0 auto;padding:18px 28px 6px;width:100%;max-width:860px;margin:0 auto;}
   .today-focus-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:11px;}
   .today-goals{display:flex;flex-wrap:wrap;gap:7px;}
@@ -938,7 +938,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v38.1 · 2026-06-21 · mobile safe-area + timeline width + weather relocation';
+var APP_BUILD = 'v38.2 · 2026-06-21 · no horizontal scroll + unified top pills';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
