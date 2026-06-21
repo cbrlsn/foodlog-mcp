@@ -472,6 +472,7 @@
   .ins-btn:active{transform:scale(0.97);}
   .ins-btn:disabled{opacity:0.55;cursor:default;box-shadow:none;}
   #page-insights>*{max-width:760px;}
+  #page-timeline>*{max-width:760px;}
   .ins-empty,.ins-loading{text-align:center;padding:48px 28px;color:var(--text3);font-size:13.5px;line-height:1.6;border:1px dashed var(--border2);border-radius:var(--radius-lg);max-width:680px;margin:0 auto;}
   .ins-loading-sub{font-size:11px;color:var(--text3);margin-top:8px;opacity:0.8;font-family:var(--font-mono);}
   .ins-hero{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 30px;margin-bottom:22px;box-shadow:var(--card-hl),var(--shadow-card);position:relative;overflow:hidden;}
@@ -526,7 +527,7 @@
   @supports (height: 100dvh){ #app{height:100dvh;} }
   @media (max-width: 760px){
     #app{flex-direction:column;}
-    #main{order:1;flex:1;min-height:0;}
+    #main{order:1;flex:1;min-height:0;padding-top:env(safe-area-inset-top);}
     #main::before{display:none;}
     #sidebar{order:2;width:100%;min-width:0;height:auto;flex-direction:row;padding:0;
       border-right:none;border-top:1px solid var(--border2);
@@ -937,7 +938,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v38 · 2026-06-21 · 3-surface restructure (Today · Timeline · Trends)';
+var APP_BUILD = 'v38.1 · 2026-06-21 · mobile safe-area + timeline width + weather relocation';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 var ACCESS_TOKEN = 'clem2024';
 var SUPABASE_URL = 'https://klcyjsjkvckhufvvdixp.supabase.co';
@@ -2504,27 +2505,32 @@ function renderWeather(){
   var t=(w.temp_mean!=null?Math.round(w.temp_mean):(w.temp_max!=null?Math.round(w.temp_max):null));
   el.textContent=((wd.emoji?wd.emoji+' ':'')+(t!=null?t+'°':'')+(wd.label?' · '+wd.label:'')).trim();
 }
+// Re-checks location each call (accepting a fix up to 1h old) and updates the
+// cache, so a move is detected; falls back to the last known coords if the
+// browser can't get a fresh position.
 function getCoords(){
   return new Promise(function(resolve){
-    try{var c=JSON.parse(localStorage.getItem('foodlog_coords')||'null');if(c&&c.lat!=null&&c.lon!=null){resolve(c);return;}}catch(e){}
-    if(!navigator.geolocation){resolve(null);return;}
+    function cached(){try{var c=JSON.parse(localStorage.getItem('foodlog_coords')||'null');if(c&&c.lat!=null&&c.lon!=null)return c;}catch(e){}return null;}
+    if(!navigator.geolocation){resolve(cached());return;}
     navigator.geolocation.getCurrentPosition(function(pos){
       var c={lat:Math.round(pos.coords.latitude*1000)/1000,lon:Math.round(pos.coords.longitude*1000)/1000};
       try{localStorage.setItem('foodlog_coords',JSON.stringify(c));}catch(e){}
       resolve(c);
-    },function(){resolve(null);},{timeout:8000,maximumAge:86400000,enableHighAccuracy:false});
+    },function(){resolve(cached());},{timeout:8000,maximumAge:3600000,enableHighAccuracy:false});
   });
 }
 async function loadWeather(){
   try{
     var today=todayStr();
-    var have=(weatherLogs||[]).find(function(w){return w.log_date===today;});
-    if(have){weatherToday=have;renderWeather();return;}
     var coords=await getCoords();
-    if(!coords)return;
+    var have=(weatherLogs||[]).find(function(w){return w.log_date===today;});
+    var moved=function(h){return !(h&&h.lat!=null&&h.lon!=null&&coords&&Math.abs(h.lat-coords.lat)<0.1&&Math.abs(h.lon-coords.lon)<0.1);};
+    // Reuse today's cached weather unless we've moved ~11km+ (or can't tell).
+    if(have&&(!coords||!moved(have))){weatherToday=have;renderWeather();return;}
+    if(!coords){if(have){weatherToday=have;renderWeather();}return;}
     var url='https://api.open-meteo.com/v1/forecast?latitude='+coords.lat+'&longitude='+coords.lon+'&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,sunshine_duration&timezone=auto&forecast_days=1';
-    var res=await fetch(url);if(!res.ok)return;var j=await res.json();
-    var d=j.daily;if(!d||!d.time||!d.time.length)return;
+    var res=await fetch(url);if(!res.ok){if(have){weatherToday=have;renderWeather();}return;}var j=await res.json();
+    var d=j.daily;if(!d||!d.time||!d.time.length){if(have){weatherToday=have;renderWeather();}return;}
     var g=function(a){return a&&a.length?a[0]:null;};
     var row={user_id:currentUser?currentUser.id:null,log_date:d.time[0],temp_max:g(d.temperature_2m_max),temp_min:g(d.temperature_2m_min),temp_mean:g(d.temperature_2m_mean),precip_mm:g(d.precipitation_sum),sunshine_hours:(d.sunshine_duration&&d.sunshine_duration.length)?Math.round(d.sunshine_duration[0]/360)/10:null,weather_code:g(d.weather_code),lat:coords.lat,lon:coords.lon};
     if(supabaseClient&&currentUser){
