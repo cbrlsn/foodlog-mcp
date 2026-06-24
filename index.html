@@ -620,6 +620,44 @@
   .today-log-card #today-log{display:flex;flex-direction:column;gap:1px;}
   .today-divider{height:1px;background:var(--border);margin:10px 0 2px;}
   .mood-card .mood-face{height:40px;display:flex;align-items:center;justify-content:center;padding:0;font-size:19px;}
+  /* shared page header (Timeline/Trends/Insights) */
+  .page-head2{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .page-eyebrow{font-family:var(--font-mono);font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:6px;}
+  .page-head2 .page-title{font-family:var(--font-display);font-size:27px;font-weight:600;letter-spacing:-.02em;}
+  #page-timeline>*{max-width:1160px;}
+  .tl-layout{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;}
+  .tl-filters{margin-bottom:0;}
+  .tl-aside{display:flex;flex-direction:column;gap:16px;position:sticky;top:8px;}
+  .tl-journal-card .journal-textarea{min-height:96px;font-size:15px;}
+  .tl-journal-card .journal-write-footer{margin-top:10px;padding-top:10px;justify-content:flex-end;}
+  .tl-glance-week{display:flex;gap:6px;margin-bottom:16px;}
+  .tl-glance-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .tl-glance-cell{width:100%;aspect-ratio:1;border-radius:5px;background:var(--bg4);}
+  .tl-glance-lbl{font-family:var(--font-mono);font-size:8px;color:var(--text3);}
+  .tl-glance-stats{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);padding-top:14px;}
+  .tl-glance-stat{display:flex;align-items:baseline;justify-content:space-between;}
+  .tl-glance-stat-k{font-family:var(--font-mono);font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+  .tl-glance-stat-v{font-family:var(--font-mono);font-size:13px;color:var(--text);font-variant-numeric:tabular-nums;}
+  /* Insights redesign */
+  #page-insights>*{max-width:1160px;}
+  .ins-head-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end;}
+  .ins-weeks{margin-bottom:0;}
+  .ins-hero{background:linear-gradient(135deg,rgba(var(--ai-rgb),.16),var(--bg2) 62%);border:1px solid rgba(var(--ai-rgb),.26);border-radius:var(--radius-lg);padding:30px 32px;margin-bottom:18px;position:relative;overflow:hidden;box-shadow:var(--shadow-card);}
+  .ins-hero::before{content:'';position:absolute;right:-50px;top:-70px;width:240px;height:240px;background:radial-gradient(circle,rgba(var(--ai-rgb),.28),transparent 70%);pointer-events:none;}
+  .ins-hero-badge{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ai);background:rgba(var(--ai-rgb),.14);border:1px solid rgba(var(--ai-rgb),.3);border-radius:20px;padding:4px 11px;margin-bottom:16px;position:relative;}
+  .ins-hero .ins-headline{font-family:var(--font-display);font-size:30px;line-height:1.28;font-weight:600;letter-spacing:-.02em;color:var(--text);position:relative;}
+  .ins-em{color:var(--accent);font-weight:600;}
+  .ins-hero-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:18px;position:relative;}
+  .ins-meta-chip{font-family:var(--font-mono);font-size:10.5px;color:var(--text2);background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:4px 10px;}
+  .ins-pattern-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+  .ins-pattern{margin-bottom:0;border-radius:var(--radius-lg);padding:20px 22px;}
+  .ins-duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+  .ins-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow-card);}
+  .ins-card.ins-watch{border-left:3px solid var(--eat);}
+  .ins-card.ins-exp{border-left:3px solid var(--accent);}
+  .ins-card-label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+  .ins-card .ins-li{border-left:none;background:transparent;padding:7px 0;border-radius:0;border-bottom:1px solid var(--border);}
+  .ins-card .ins-li:last-child{border-bottom:none;}
   /* sidebar collapse */
   .logo-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:0 18px 16px;}
   .logo-row .logo{padding:0;}
@@ -665,6 +703,12 @@
     .today-hero{grid-template-columns:1fr;}
     .today-kpi{grid-template-columns:1fr 1fr;}
     .today-kpi > .kpi-card:nth-child(3){grid-column:1 / -1;}
+    .tl-layout{grid-template-columns:1fr;}
+    .tl-aside{position:static;order:-1;}
+    .page-head2{align-items:flex-start;}
+    .ins-pattern-grid,.ins-duo{grid-template-columns:1fr;}
+    .ins-head-right{justify-content:flex-start;}
+    .ins-hero .ins-headline{font-size:23px;}
     .chat-card{min-height:340px;}
     .kcal-gauge{max-width:260px;height:170px;}
     .chat-card #chat-messages{max-height:240px;padding:14px;}
@@ -886,23 +930,38 @@
 
     <!-- TIMELINE (Food + Drink + Move + Health + Journal, merged) -->
     <div id="page-timeline" class="page">
-      <div class="page-header"><div class="page-title">Timeline</div><div class="page-sub" id="timeline-count"></div></div>
-      <div class="tl-filters" id="tl-filters">
-        <div class="tl-chip active" data-filter="all" onclick="setTimelineFilter('all')">All</div>
-        <div class="tl-chip" data-filter="food" onclick="setTimelineFilter('food')">Food</div>
-        <div class="tl-chip" data-filter="drink" onclick="setTimelineFilter('drink')">Drink</div>
-        <div class="tl-chip" data-filter="move" onclick="setTimelineFilter('move')">Move</div>
-        <div class="tl-chip" data-filter="health" onclick="setTimelineFilter('health')">Health</div>
-        <div class="tl-chip" data-filter="journal" onclick="setTimelineFilter('journal')">Journal</div>
-      </div>
-      <div class="tl-journal-write" id="tl-journal-write">
-        <textarea id="journal-input" class="journal-textarea" placeholder="Journal — what's on your mind..."></textarea>
-        <div class="journal-write-footer">
-          <span class="journal-charcount" id="journal-charcount"></span>
-          <button class="journal-done-btn" onclick="saveJournalEntry()">✓ done</button>
+      <div class="page-head2">
+        <div><div class="page-eyebrow">Everything you've logged</div><div class="page-title">Timeline</div></div>
+        <div class="tl-filters" id="tl-filters">
+          <div class="tl-chip active" data-filter="all" onclick="setTimelineFilter('all')">All</div>
+          <div class="tl-chip" data-filter="food" onclick="setTimelineFilter('food')">Food</div>
+          <div class="tl-chip" data-filter="drink" onclick="setTimelineFilter('drink')">Drink</div>
+          <div class="tl-chip" data-filter="move" onclick="setTimelineFilter('move')">Move</div>
+          <div class="tl-chip" data-filter="health" onclick="setTimelineFilter('health')">Health</div>
+          <div class="tl-chip" data-filter="journal" onclick="setTimelineFilter('journal')">Journal</div>
         </div>
       </div>
-      <div id="timeline-list"></div>
+      <div class="tl-layout">
+        <div class="tl-main">
+          <div class="page-sub" id="timeline-count" style="margin-bottom:12px;"></div>
+          <div id="timeline-list"></div>
+        </div>
+        <aside class="tl-aside">
+          <div class="card tl-journal-card">
+            <div class="card-head"><span class="card-eyebrow">Journal</span><span class="card-head-aux" id="journal-charcount"></span></div>
+            <div class="tl-journal-write" id="tl-journal-write">
+              <textarea id="journal-input" class="journal-textarea" placeholder="What's on your mind…"></textarea>
+              <div class="journal-write-footer">
+                <button class="journal-done-btn" onclick="saveJournalEntry()">✓ save</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><span class="card-eyebrow">This week · at a glance</span></div>
+            <div id="tl-glance"></div>
+          </div>
+        </aside>
+      </div>
     </div>
 
     <!-- SUPPLEMENT TRACKER (under Trends) -->
@@ -936,11 +995,13 @@
 
     <!-- INSIGHTS -->
     <div id="page-insights" class="page">
-      <div class="page-header">
-        <div class="page-title">Insights</div>
-        <button class="ins-btn" id="ins-generate" onclick="generateSelectedWeek()">Generate</button>
+      <div class="page-head2">
+        <div><div class="page-eyebrow">Weekly analysis · by Coach</div><div class="page-title">Insights</div></div>
+        <div class="ins-head-right">
+          <div id="ins-weeks" class="ins-weeks"></div>
+          <button class="ins-btn" id="ins-generate" onclick="generateSelectedWeek()">Generate</button>
+        </div>
       </div>
-      <div id="ins-weeks" class="ins-weeks"></div>
       <div id="ins-body"></div>
     </div>
 
@@ -1119,7 +1180,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v39.1 · 2026-06-24 · inline greeting + collapsible sidebar';
+var APP_BUILD = 'v39.2 · 2026-06-24 · Timeline + Insights redesign';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -1714,12 +1775,59 @@ function renderTimeline(){
   list.innerHTML='';
   days.forEach(function(day){
     var dayItems=byDay[day].sort(function(a,b){return (b.time||'').localeCompare(a.time||'');});
+    // per-day summary chips: kcal · water · mood
+    var dayEntries=dayItems.filter(function(it){return it.kind==='entry';}).map(function(it){return it.data;});
+    var kcal=dayEntries.filter(function(e){return e.meal!=='water';}).reduce(function(s,e){return s+(e.calories||0);},0);
+    var waterMl=dayEntries.reduce(function(s,e){return s+getHydrationMl(e);},0);
+    var mood=(moodLogs||[]).find(function(m){return m.date===day;});
+    var chips='';
+    if(kcal>0)chips+='<div class="meta-chip cal">'+Math.round(kcal).toLocaleString('en-US')+' kcal</div>';
+    if(waterMl>0)chips+='<div class="meta-chip blue">'+(Math.round(waterMl/100)/10).toFixed(1)+' L</div>';
+    if(mood)chips+='<div class="meta-chip purple">'+mood.rating+'/5</div>';
+    chips+='<div class="meta-chip">'+dayItems.length+' item'+(dayItems.length===1?'':'s')+'</div>';
     var card=document.createElement('div'); card.className='day-card';
-    card.innerHTML='<div class="day-card-header"><div class="day-label">'+fmtDate(day)+'</div><div class="day-meta-chips"><div class="meta-chip">'+dayItems.length+' item'+(dayItems.length===1?'':'s')+'</div></div></div>';
+    card.innerHTML='<div class="day-card-header"><div class="day-label">'+fmtDate(day)+'</div><div class="day-meta-chips">'+chips+'</div></div>';
     var listDiv=document.createElement('div'); listDiv.className='day-entries-list';
     dayItems.forEach(function(it){ listDiv.appendChild(tlRowNode(it,{del:true})); });
     card.appendChild(listDiv); list.appendChild(card);
   });
+  renderTimelineGlance();
+}
+
+// "This week · at a glance" panel in the Timeline aside
+function renderTimelineGlance(){
+  var el=document.getElementById('tl-glance'); if(!el) return;
+  var labels=['S','M','T','W','T','F','S'];
+  var week=[];
+  for(var i=6;i>=0;i--){
+    var d=new Date();d.setDate(d.getDate()-i);
+    var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var dayEntries=entries.filter(function(e){return e.date===ds;});
+    var kcal=dayEntries.filter(function(e){return e.meal!=='water';}).reduce(function(s,e){return s+(e.calories||0);},0);
+    week.push({date:ds,kcal:kcal,lbl:labels[d.getDay()]});
+  }
+  var maxK=Math.max.apply(null,week.map(function(x){return x.kcal;}).concat([1]));
+  var cells=week.map(function(x){
+    var intensity=x.kcal>0?(0.18+0.82*(x.kcal/maxK)):0;
+    var bg=x.kcal>0?'rgba(var(--accent-rgb),'+intensity.toFixed(2)+')':'var(--bg4)';
+    return '<div class="tl-glance-col"><div class="tl-glance-cell" style="background:'+bg+'"></div><div class="tl-glance-lbl">'+x.lbl+'</div></div>';
+  }).join('');
+  // weekly averages
+  var foodDays=week.filter(function(x){return x.kcal>0;});
+  var avgK=foodDays.length?Math.round(foodDays.reduce(function(s,x){return s+x.kcal;},0)/foodDays.length):0;
+  var weekDates=week.map(function(x){return x.date;});
+  var protDays={};entries.filter(function(e){return weekDates.indexOf(e.date)>-1&&e.meal!=='water';}).forEach(function(e){protDays[e.date]=(protDays[e.date]||0)+(e.protein_g||0);});
+  var pv=Object.values(protDays);var avgP=pv.length?Math.round(pv.reduce(function(a,b){return a+b;},0)/pv.length):0;
+  var workouts=activities.filter(function(a){return weekDates.indexOf(a.date)>-1;}).length;
+  var moodVals=(moodLogs||[]).filter(function(m){return weekDates.indexOf(m.date)>-1;}).map(function(m){return m.rating;});
+  var avgM=moodVals.length?(moodVals.reduce(function(a,b){return a+b;},0)/moodVals.length).toFixed(1):'—';
+  el.innerHTML='<div class="tl-glance-week">'+cells+'</div>'
+    +'<div class="tl-glance-stats">'
+    +'<div class="tl-glance-stat"><span class="tl-glance-stat-k">avg kcal</span><span class="tl-glance-stat-v">'+avgK.toLocaleString('en-US')+'</span></div>'
+    +'<div class="tl-glance-stat"><span class="tl-glance-stat-k">avg protein</span><span class="tl-glance-stat-v">'+avgP+' g</span></div>'
+    +'<div class="tl-glance-stat"><span class="tl-glance-stat-k">workouts</span><span class="tl-glance-stat-v">'+workouts+'</span></div>'
+    +'<div class="tl-glance-stat"><span class="tl-glance-stat-k">avg mood</span><span class="tl-glance-stat-v">'+avgM+' / 5</span></div>'
+    +'</div>';
 }
 
 // ── Settings drawer ──────────────────────────────────────────────
@@ -3288,18 +3396,65 @@ function buildPayloadForDates(dates){
 
 function insSection(label){var s=document.createElement('div');s.className='ins-section';var l=document.createElement('div');l.className='ins-section-label';l.textContent=label;s.appendChild(l);return s;}
 
+function escIns(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// escape, then accent-highlight numbers/units and "x / y" figures
+function insHighlight(s){return escIns(s).replace(/(\d[\d.,]*(?:\s?\/\s?\d+)?\s?(?:min|mins|g|kg|%|hrs|hours|h|days|day|ml|L|mg|kcal|pts|points)?)/g,'<span class="ins-em">$1</span>');}
+
 function renderInsightsResult(payload){
   var body=document.getElementById('ins-body');if(!body)return;
   body.innerHTML='';
   var d=payload.data||{};
+  // meta from the week's data
+  var dates=(typeof insWeekDates==='function')?insWeekDates(payload.weekKey||''):[];
+  var weekEntries=entries.filter(function(e){return dates.indexOf(e.date)>-1&&e.meal!=='water';}).length;
+  var daysLogged=dates.filter(function(dt){return entries.some(function(e){return e.date===dt;});}).length;
+  var top=(d.patterns&&d.patterns[0])||{};
+  var topConf=(top.confidence||'').toLowerCase();if(['low','medium','high'].indexOf(topConf)<0)topConf='';
+  var topStreams=top.streams||[];
+
+  // hero (AI-tinted)
   var hero=document.createElement('div');hero.className='ins-hero';
-  var lbl=document.createElement('div');lbl.className='ins-hero-label';lbl.textContent=(payload.label||insWeekLabel(payload.weekKey||''))+' · '+(payload.range||'');hero.appendChild(lbl);
-  var hl=document.createElement('div');hl.className='ins-headline';hl.textContent=d.headline||'Here is your week.';hero.appendChild(hl);
+  var chips='';
+  if(weekEntries)chips+='<span class="ins-meta-chip">'+weekEntries+' entries</span>';
+  if(daysLogged)chips+='<span class="ins-meta-chip">'+daysLogged+' days</span>';
+  if(topStreams.length>=2)chips+='<span class="ins-meta-chip">'+escIns(topStreams[0])+' → '+escIns(topStreams[topStreams.length-1])+' correlation</span>';
+  if(topConf)chips+='<span class="ins-conf '+topConf+'">'+topConf+' confidence</span>';
+  hero.innerHTML='<div class="ins-hero-badge">✦ This week’s headline</div>'
+    +'<div class="ins-headline">'+insHighlight(d.headline||'Here is your week.')+'</div>'
+    +(chips?'<div class="ins-hero-meta">'+chips+'</div>':'');
   body.appendChild(hero);
+
+  // patterns — two-up
+  if(d.patterns&&d.patterns.length){
+    var grid=document.createElement('div');grid.className='ins-pattern-grid';
+    d.patterns.forEach(function(p){
+      var cf=(p.confidence||'low').toLowerCase();if(['low','medium','high'].indexOf(cf)<0)cf='low';
+      var tags=(p.streams||[]).map(function(st){return '<span class="ins-tag">'+escIns(st)+'</span>';}).join('');
+      var card=document.createElement('div');card.className='ins-pattern';
+      card.innerHTML='<div class="ins-pattern-head"><div class="ins-pattern-title">'+escIns(p.title||'')+'</div><span class="ins-conf '+cf+'">'+cf+'</span></div>'
+        +'<div class="ins-pattern-detail">'+insHighlight(p.detail||'')+'</div>'
+        +(tags?'<div class="ins-tags">'+tags+'</div>':'');
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  }
+
+  // watch + try — two-up
+  var duo=document.createElement('div');duo.className='ins-duo';
+  if(d.watch&&d.watch.length){
+    var w=document.createElement('div');w.className='ins-card ins-watch';
+    w.innerHTML='<div class="ins-card-label">Things to watch</div>'+d.watch.map(function(t){return '<div class="ins-li">'+escIns(t)+'</div>';}).join('');
+    duo.appendChild(w);
+  }
+  if(d.experiments&&d.experiments.length){
+    var x=document.createElement('div');x.className='ins-card ins-exp';
+    x.innerHTML='<div class="ins-card-label">Try next week</div>'+d.experiments.map(function(t){return '<div class="ins-li">'+escIns(t)+'</div>';}).join('');
+    duo.appendChild(x);
+  }
+  if(duo.children.length)body.appendChild(duo);
+
   if(d.highlights&&d.highlights.length){var s=insSection('What went well');var wrap=document.createElement('div');wrap.className='ins-chips';d.highlights.forEach(function(t){var c=document.createElement('div');c.className='ins-chip';c.textContent=t;wrap.appendChild(c);});s.appendChild(wrap);body.appendChild(s);}
-  if(d.patterns&&d.patterns.length){var s2=insSection('Patterns we noticed');d.patterns.forEach(function(p){var card=document.createElement('div');card.className='ins-pattern';var head=document.createElement('div');head.className='ins-pattern-head';var title=document.createElement('div');title.className='ins-pattern-title';title.textContent=p.title||'';var cf=(p.confidence||'low').toLowerCase();if(cf!=='low'&&cf!=='medium'&&cf!=='high')cf='low';var conf=document.createElement('span');conf.className='ins-conf '+cf;conf.textContent=cf;head.appendChild(title);head.appendChild(conf);card.appendChild(head);var det=document.createElement('div');det.className='ins-pattern-detail';det.textContent=p.detail||'';card.appendChild(det);if(p.streams&&p.streams.length){var tags=document.createElement('div');tags.className='ins-tags';p.streams.forEach(function(st){var t=document.createElement('span');t.className='ins-tag';t.textContent=st;tags.appendChild(t);});card.appendChild(tags);}s2.appendChild(card);});body.appendChild(s2);}
-  if(d.watch&&d.watch.length){var s3=insSection('Worth watching');var c1=document.createElement('div');c1.className='ins-card ins-watch';d.watch.forEach(function(t){var r=document.createElement('div');r.className='ins-li';r.textContent=t;c1.appendChild(r);});s3.appendChild(c1);body.appendChild(s3);}
-  if(d.experiments&&d.experiments.length){var s4=insSection('Try next week');var c2=document.createElement('div');c2.className='ins-card ins-exp';d.experiments.forEach(function(t){var r=document.createElement('div');r.className='ins-li';r.textContent=t;c2.appendChild(r);});s4.appendChild(c2);body.appendChild(s4);}
+
   var note=document.createElement('div');note.className='ins-note';var when=new Date(payload.generatedAt);note.textContent=(d.data_note?d.data_note+'  ·  ':'')+'Generated '+when.toLocaleString();body.appendChild(note);
   var btn=document.getElementById('ins-generate');if(btn){btn.textContent='↻ regenerate';btn.disabled=false;}
 }
