@@ -128,7 +128,7 @@
   .chat-card #chat-input{max-width:none;min-height:48px;}
   .today-log-card #today-log{display:flex;flex-direction:column;gap:2px;}
   .today-log-empty{font-size:12.5px;color:var(--text3);line-height:1.6;padding:6px 2px;}
-  .tl-row{display:flex;align-items:flex-start;gap:11px;padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;border-radius:8px;}
+  .tl-row{position:relative;display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;border-radius:8px;}
   .tl-row:last-child{border-bottom:none;}
   .tl-row:hover{background:rgba(241,239,228,0.025);}
   .tl-time{font-family:var(--font-mono);font-size:10px;color:var(--text3);min-width:34px;padding-top:3px;font-variant-numeric:tabular-nums;}
@@ -154,8 +154,9 @@
   [data-theme="light"] .b-snack{color:#a8567f;background:rgba(168,86,127,0.12);}
   [data-theme="light"] .b-drink{color:#2a8a90;background:rgba(42,138,144,0.12);}
   [data-theme="light"] .b-water{color:#2c7ea3;background:rgba(44,126,163,0.12);}
-  .tl-del,.tl-save{background:none;border:none;color:var(--text3);cursor:pointer;padding:3px 5px;border-radius:6px;font-size:12px;align-self:flex-start;margin-top:2px;opacity:0;transition:opacity .12s,color .12s,background .12s;}
-  .tl-row:hover .tl-del,.tl-row:hover .tl-save{opacity:0.75;}
+  .tl-del,.tl-save{position:absolute;top:7px;background:var(--bg2);border:1px solid var(--border);color:var(--text3);cursor:pointer;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:12px;opacity:0;transition:opacity .12s,color .12s,background .12s;}
+  .tl-save{right:34px;} .tl-del{right:4px;}
+  .tl-row:hover .tl-del,.tl-row:hover .tl-save{opacity:1;}
   .tl-del:hover{color:var(--red);background:rgba(227,107,98,0.12);opacity:1;}
   .tl-save:hover{color:var(--eat);opacity:1;}
   .tl-journal .tl-text{font-family:var(--font-display);font-size:14.5px;line-height:1.55;}
@@ -168,6 +169,20 @@
   .tl-journal-write:focus-within{border-color:rgba(var(--accent-rgb),0.32);}
   .tl-journal-write .journal-textarea{min-height:84px;font-size:15px;}
   .tl-journal-write .journal-write-footer{margin-top:10px;padding-top:10px;}
+  .journal-write-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  /* Journal page */
+  .journal-page-wrap{max-width:760px;}
+  #page-journal .tl-journal-write{margin-bottom:22px;}
+  /* Journal card on Today */
+  .today-journal-card .journal-textarea{width:100%;min-height:66px;font-size:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;color:var(--text);font-family:'Geist',-apple-system,sans-serif;padding:11px 14px;resize:none;outline:none;line-height:1.5;transition:border-color .15s;box-sizing:border-box;}
+  .today-journal-card .journal-textarea:focus{border-color:rgba(var(--accent-rgb),0.4);}
+  .today-journal-card .journal-write-footer{margin-top:10px;}
+  .journal-open-link{background:none;border:none;color:var(--accent);font-family:'Geist',-apple-system,sans-serif;font-size:11px;font-weight:600;cursor:pointer;padding:0;letter-spacing:0;text-transform:none;}
+  .journal-open-link:hover{text-decoration:underline;}
+  .journal-today-recent{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+  .journal-today-item{border-top:1px solid var(--border);padding-top:10px;}
+  .journal-today-when{font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+  .journal-today-text{font-size:13px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   /* mini add button (Today supplement section) */
   .mini-add{background:var(--accent-dim);border:1px solid rgba(var(--accent-rgb),0.3);color:var(--accent);border-radius:7px;font-size:10px;font-weight:600;padding:3px 9px;cursor:pointer;font-family:'Geist',-apple-system,sans-serif;letter-spacing:0;text-transform:none;transition:all .15s var(--ease);}
   .mini-add:hover{background:var(--accent);color:var(--on-accent);}
@@ -287,7 +302,7 @@
   .day-meta-chips{display:flex;gap:8px;align-items:center;}
   .meta-chip{font-family:var(--font-mono);font-size:10px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums;}
   .meta-chip.cal{color:var(--eat);}.meta-chip.blue{color:var(--move);}.meta-chip.purple{color:var(--feel);}
-  .day-entries-list{border-top:1px solid var(--border);}
+  .day-entries-list{border-top:1px solid var(--border);padding:2px 18px;}
   .hist-entry{display:flex;align-items:flex-start;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
   .hist-entry:hover{background:rgba(241,239,228,0.025);}
   .hist-entry:last-child{border-bottom:none;}
@@ -532,8 +547,9 @@
   .today-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:2px;}
   .today-meta{font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:10px;margin-bottom:7px;font-variant-numeric:tabular-nums;}
   .today-meta .weather-strip{text-transform:none;letter-spacing:0;}
-  .today-greeting{font-family:var(--font-display);font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.1;}
-  .today-focus-score{color:var(--text3);font-weight:500;font-variant-numeric:tabular-nums;margin-left:4px;}
+  .today-greeting{font-family:var(--font-display);font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1.12;}
+  .today-greeting-sub{font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--text3);letter-spacing:-.01em;margin-bottom:1px;}
+  .today-focus-score{font-family:var(--font-display);font-size:30px;font-weight:600;color:var(--text);letter-spacing:-.03em;line-height:1.12;font-variant-numeric:tabular-nums;}
   .today-search{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--border2);border-radius:11px;padding:8px 12px;min-width:240px;color:var(--text3);box-shadow:var(--card-hl);}
   .today-search svg{width:15px;height:15px;flex-shrink:0;}
   .today-search input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Geist',-apple-system,sans-serif;font-size:12.5px;min-width:0;}
@@ -550,9 +566,10 @@
   .kcal-gauge-svg{width:100%;height:100%;overflow:visible;}
   .kg-track{fill:none;stroke:var(--bg4);stroke-width:13;stroke-linecap:round;}
   .kg-prog{fill:none;stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset 1s var(--ease);}
-  .kcal-gauge-center{position:absolute;left:0;right:0;top:58%;transform:translateY(-50%);text-align:center;pointer-events:none;}
-  .kg-num{font-family:var(--font-display);font-size:44px;font-weight:600;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;}
-  .kg-sub{font-family:var(--font-mono);font-size:10.5px;color:var(--text3);margin-top:6px;letter-spacing:.04em;}
+  .kcal-gauge-center{position:absolute;left:0;right:0;top:66%;transform:translateY(-50%);text-align:center;pointer-events:none;}
+  .kg-num{font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;}
+  .kg-sub{font-family:var(--font-mono);font-size:10.5px;color:var(--text3);margin-top:5px;letter-spacing:.04em;}
+  .arc-nutrients{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
   .arc-macros{display:flex;flex-direction:column;gap:9px;margin-top:8px;padding-top:14px;border-top:1px solid var(--border);}
   .amac{display:flex;align-items:center;gap:10px;}
   .amac-label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);width:54px;flex-shrink:0;}
@@ -569,7 +586,7 @@
   .intake-meal{display:flex;flex-direction:column;gap:2px;}
   .intake-meal-name{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;text-transform:capitalize;color:var(--text3);}
   .intake-meal-kcal{font-family:var(--font-mono);font-size:12px;color:var(--text);font-variant-numeric:tabular-nums;}
-  .chat-card{display:flex;flex-direction:column;min-height:380px;padding:0;overflow:hidden;}
+  .chat-card{display:flex;flex-direction:column;height:487px;padding:0;overflow:hidden;}
   .chat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 16px;border-bottom:1px solid var(--border);}
   .chat-head-id{display:flex;align-items:center;gap:10px;}
   .coach-orb{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#d8b4fe,var(--ai));flex-shrink:0;box-shadow:0 0 12px var(--ai-dim);}
@@ -584,10 +601,10 @@
   .qchip:hover{color:var(--text);border-color:var(--accent);background:var(--accent-dim);}
   .chat-card #chat-input-area{position:static;display:flex;gap:8px;align-items:flex-end;padding:12px 16px 14px;border-top:1px solid var(--border);background:transparent;justify-content:stretch;}
   .chat-card #chat-input{flex:1;max-width:none;min-height:44px;background:var(--bg3);}
-  .chat-cam,.chat-mic{background:var(--bg3);border:1px solid var(--border2);color:var(--text3);border-radius:11px;width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s var(--ease);}
+  .chat-cam,.chat-mic{background:var(--bg3);border:1px solid var(--border2);color:var(--text3);border-radius:12px;width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s var(--ease);}
   .chat-cam:hover,.chat-mic:hover{color:var(--text);border-color:var(--border3);}
   .chat-cam svg,.chat-mic svg{width:18px;height:18px;}
-  .chat-card #send-btn{border-radius:12px;width:42px;height:42px;box-shadow:0 6px 18px rgba(var(--accent-rgb),0.3);}
+  .chat-card #send-btn{border-radius:12px;width:44px;height:44px;box-shadow:0 6px 18px rgba(var(--accent-rgb),0.3);}
   .chat-card #send-btn svg{width:20px;height:20px;stroke:var(--on-accent);fill:none;}
   .msg-claude .msg-avatar{background:radial-gradient(circle at 34% 30%,#d8b4fe,var(--ai));color:transparent;border:none;box-shadow:0 0 10px var(--ai-dim);}
   .today-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
@@ -604,13 +621,14 @@
   .hyd-hist-lbl{font-family:var(--font-mono);font-size:8px;color:var(--text3);}
   .mood-spark{margin-top:14px;}
   .mood-spark-cap{font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:7px;}
-  .today-goals{display:flex;flex-direction:column;gap:7px;}
-  .today-goals .supp-row{flex:none;margin:0;width:100%;padding:7px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);gap:9px;justify-content:flex-start;}
+  .today-goals{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .today-goals .supp-row{flex:none;margin:0;width:100%;padding:6px 9px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);gap:8px;justify-content:flex-start;min-width:0;}
   .today-goals .supp-row.taken{background:transparent;border-color:transparent;opacity:.85;}
   .today-goals .supp-row > div[style*="font-size:16px"]{display:none;}
-  .today-goals .supp-check{width:18px;height:18px;min-width:18px;border-radius:6px;font-size:11px;}
-  .today-goals .supp-info{flex:1;display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
-  .today-goals .supp-name{font-size:12.5px;font-weight:500;}
+  .today-goals .supp-check{width:16px;height:16px;min-width:16px;border-radius:5px;font-size:10px;}
+  .today-goals .supp-info{flex:1;min-width:0;display:flex;align-items:baseline;gap:5px;}
+  .today-goals .supp-name{font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .today-goals .supp-dose-label{display:none;}
   .today-goals .supp-dose-label{font-size:10px;color:var(--text3);font-family:var(--font-mono);}
   .goals-head-right{display:flex;align-items:center;gap:8px;}
   .goals-count{font-family:var(--font-mono);font-size:11px;color:var(--text2);font-variant-numeric:tabular-nums;}
@@ -630,10 +648,12 @@
   .tl-aside{display:flex;flex-direction:column;gap:16px;position:sticky;top:8px;}
   .tl-journal-card .journal-textarea{min-height:96px;font-size:15px;}
   .tl-journal-card .journal-write-footer{margin-top:10px;padding-top:10px;justify-content:flex-end;}
-  .tl-glance-week{display:flex;gap:6px;margin-bottom:16px;}
+  .tl-glance-week{display:flex;gap:6px;margin-bottom:9px;}
   .tl-glance-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
   .tl-glance-cell{width:100%;aspect-ratio:1;border-radius:5px;background:var(--bg4);}
   .tl-glance-lbl{font-family:var(--font-mono);font-size:8px;color:var(--text3);}
+  .tl-glance-caption{font-size:10.5px;color:var(--text3);margin-bottom:16px;line-height:1.4;}
+  .tl-glance-stats-head{font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;}
   .tl-glance-stats{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);padding-top:14px;}
   .tl-glance-stat{display:flex;align-items:baseline;justify-content:space-between;}
   .tl-glance-stat-k{font-family:var(--font-mono);font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
@@ -807,6 +827,7 @@
     </div>
     <div class="nav-item active" onclick="showTab('today')" id="tab-today"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span> Today</div>
     <div class="nav-item" onclick="showTab('timeline')" id="tab-timeline"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="5" cy="18" r="1.3"/><path d="M10 6h10M10 12h10M10 18h10"/></svg></span> Timeline</div>
+    <div class="nav-item" onclick="showTab('journal')" id="tab-journal"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Journal</div>
     <div class="nav-item" onclick="showTab('trends')" id="tab-trends"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-8"/><path d="M16 7h4v4"/></svg></span> Trends</div>
     <div class="sidebar-bottom">
       <div class="sync-indicator" id="sync-status">● connected</div>
@@ -833,7 +854,8 @@
         <div class="today-header">
           <div class="today-head-left">
             <div class="today-meta"><span id="today-meta-line"></span><span id="weather-strip" class="weather-strip"></span></div>
-            <h1 class="today-greeting"><span id="today-focus-greeting">Today</span> <span id="goals-score" class="today-focus-score"></span></h1>
+            <div id="today-focus-greeting" class="today-greeting-sub">Hey.</div>
+            <h1 class="today-greeting"><span id="goals-score" class="today-focus-score">You're on track.</span></h1>
           </div>
           <div class="today-search" title="Search (visual only for now)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -848,12 +870,7 @@
           <div class="card arc-card">
             <div class="card-head"><span class="card-eyebrow">Daily Arc · kcal</span><span id="arc-togoal" class="arc-togoal"></span></div>
             <div id="kcal-gauge"></div>
-            <div id="arc-macros" class="arc-macros"></div>
-            <div class="arc-intake">
-              <div class="arc-intake-head"><span class="card-eyebrow">Intake by meal</span><span id="intake-remain" class="arc-intake-remain"></span></div>
-              <div id="intake-bar" class="intake-bar"></div>
-              <div id="intake-meals" class="intake-meals"></div>
-            </div>
+            <div class="arc-nutrients"><div class="nutrient-bars" id="nutrient-bars"></div></div>
           </div>
 
           <!-- Coach chat (HERO) -->
@@ -898,7 +915,7 @@
           </div>
           <!-- Goals -->
           <div class="card kpi-card">
-            <div class="card-head"><span class="card-eyebrow">Today · goals</span><span class="goals-head-right"><span id="goals-count" class="goals-count"></span><button class="goals-pencil" title="Goals update automatically as you log" onclick="showToast('Goals update automatically as you log')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></span></div>
+            <div class="card-head"><span class="card-eyebrow">Today · goals</span><span class="goals-head-right"><span id="goals-count" class="goals-count"></span><button class="goals-pencil" title="Edit goals & targets" onclick="openSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></span></div>
             <div id="daily-goals" class="today-goals"></div>
           </div>
         </div>
@@ -909,11 +926,19 @@
           <div id="today-log"></div>
         </div>
 
+        <!-- Journal — quick note (full notebook on its own page) -->
+        <div class="card today-journal-card">
+          <div class="card-head"><span class="card-eyebrow">Journal</span><button class="journal-open-link" onclick="showPage('journal')">open notebook →</button></div>
+          <textarea id="journal-input-today" class="journal-textarea" placeholder="What's on your mind…"></textarea>
+          <div class="journal-write-footer">
+            <span class="journal-charcount" id="journal-charcount-today"></span>
+            <button class="journal-done-btn" onclick="saveJournalEntry('journal-input-today')">✓ save</button>
+          </div>
+          <div id="journal-today-recent" class="journal-today-recent"></div>
+        </div>
+
         <!-- ── Secondary (tucked below the bento) ───────────────── -->
         <div class="today-divider"></div>
-
-        <!-- Macros & limits (full detail) -->
-        <div class="card"><div class="card-head"><span class="card-eyebrow">Macros &amp; limits</span></div><div class="nutrient-bars" id="nutrient-bars"></div></div>
 
         <!-- Saved dishes — tap to log now -->
         <div id="saved-meals" class="saved-meals"></div>
@@ -955,9 +980,6 @@
           </div>
           <div id="subst-checklist" class="supp-checklist"></div>
         </div>
-
-        <!-- Today's log (inline entries) -->
-        <div class="rail-card today-log-card"><div class="rail-card-title">today's log</div><div id="today-log"></div></div>
       </div>
     </div>
 
@@ -980,20 +1002,28 @@
           <div id="timeline-list"></div>
         </div>
         <aside class="tl-aside">
-          <div class="card tl-journal-card">
-            <div class="card-head"><span class="card-eyebrow">Journal</span><span class="card-head-aux" id="journal-charcount"></span></div>
-            <div class="tl-journal-write" id="tl-journal-write">
-              <textarea id="journal-input" class="journal-textarea" placeholder="What's on your mind…"></textarea>
-              <div class="journal-write-footer">
-                <button class="journal-done-btn" onclick="saveJournalEntry()">✓ save</button>
-              </div>
-            </div>
-          </div>
           <div class="card">
-            <div class="card-head"><span class="card-eyebrow">This week · at a glance</span></div>
+            <div class="card-head"><span class="card-eyebrow">Last 7 days</span></div>
             <div id="tl-glance"></div>
           </div>
         </aside>
+      </div>
+    </div>
+
+    <!-- JOURNAL (own page, left nav) -->
+    <div id="page-journal" class="page">
+      <div class="page-head2">
+        <div><div class="page-eyebrow">Your private notebook</div><div class="page-title">Journal</div></div>
+        <span class="journal-charcount" id="journal-charcount"></span>
+      </div>
+      <div class="journal-page-wrap">
+        <div class="tl-journal-write">
+          <textarea id="journal-input" class="journal-textarea" placeholder="What's on your mind…"></textarea>
+          <div class="journal-write-footer">
+            <button class="journal-done-btn" onclick="saveJournalEntry()">✓ save</button>
+          </div>
+        </div>
+        <div id="journal-entries"></div>
       </div>
     </div>
 
@@ -1217,7 +1247,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v39.3 · 2026-06-24 · Trends redesign (KPIs + stacked macros + all streams)';
+var APP_BUILD = 'v40 · 2026-06-25 · Today + Timeline polish + Journal page';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -1627,8 +1657,6 @@ function renderKcalGauge(){
 
   var tg=document.getElementById('arc-togoal');
   if(tg){var remain=target-eaten;tg.textContent=remain>0?('+'+remain.toLocaleString('en-US')+' to goal'):(Math.abs(remain).toLocaleString('en-US')+' over');tg.style.color=remain>=0?'var(--accent)':'var(--red)';}
-  renderArcMacros();
-  renderIntakeByMeal();
 }
 
 // 3 macro bars inside the Daily Arc card (protein=accent, carbs=eat, fat=feel)
@@ -1859,7 +1887,9 @@ function renderTimelineGlance(){
   var moodVals=(moodLogs||[]).filter(function(m){return weekDates.indexOf(m.date)>-1;}).map(function(m){return m.rating;});
   var avgM=moodVals.length?(moodVals.reduce(function(a,b){return a+b;},0)/moodVals.length).toFixed(1):'—';
   el.innerHTML='<div class="tl-glance-week">'+cells+'</div>'
+    +'<div class="tl-glance-caption">calories eaten per day · darker = more</div>'
     +'<div class="tl-glance-stats">'
+    +'<div class="tl-glance-stats-head">7-day averages</div>'
     +'<div class="tl-glance-stat"><span class="tl-glance-stat-k">avg kcal</span><span class="tl-glance-stat-v">'+avgK.toLocaleString('en-US')+'</span></div>'
     +'<div class="tl-glance-stat"><span class="tl-glance-stat-k">avg protein</span><span class="tl-glance-stat-v">'+avgP+' g</span></div>'
     +'<div class="tl-glance-stat"><span class="tl-glance-stat-k">workouts</span><span class="tl-glance-stat-v">'+workouts+'</span></div>'
@@ -2946,24 +2976,48 @@ function applyJournalFont(){
   document.querySelectorAll('.journal-entry-text').forEach(function(el){el.style.fontSize=journalFontSize+'px';});
 }
 
-async function saveJournalEntry(){
-  var ta=document.getElementById('journal-input');
+async function saveJournalEntry(inputId){
+  inputId=inputId||'journal-input';
+  var ta=document.getElementById(inputId);
+  if(!ta)return;
   var text=(ta.value||'').trim();
   if(!text){showToast('write something first');return;}
   var {data,error}=await supabaseClient.from('journal_entries').insert({user_id:currentUser.id,content:text}).select().single();
   if(error){showToast('save failed');console.error(error);return;}
   journalEntries.unshift(data);
   ta.value='';
-  document.getElementById('journal-charcount').textContent='';
-  renderTimeline();
+  ['journal-charcount','journal-charcount-today'].forEach(function(id){var c=document.getElementById(id);if(c)c.textContent='';});
+  renderJournal();renderTodayJournal();renderTimeline();
   showToast('entry saved ✓');
 }
 
 async function deleteJournalEntry(id){
-  if(!confirm('Delete this journal entry?'))return;
+  if(!await showConfirm('Delete this journal entry?'))return;
   await supabaseClient.from('journal_entries').delete().eq('id',id);
   journalEntries=journalEntries.filter(function(e){return e.id!==id;});
-  renderTimeline();
+  renderJournal();renderTodayJournal();renderTimeline();
+}
+
+// Compact journal widget on the Today page: quick-note + 2 most recent entries
+function renderTodayJournal(){
+  var ta=document.getElementById('journal-input-today');
+  if(ta&&!ta._hasListener){
+    ta._hasListener=true;
+    ta.addEventListener('input',function(){
+      var cc=document.getElementById('journal-charcount-today');
+      if(cc)cc.textContent=ta.value.length>0?ta.value.length+' chars':'';
+    });
+  }
+  var el=document.getElementById('journal-today-recent');
+  if(!el)return;
+  var recent=(journalEntries||[]).slice(0,2);
+  if(!recent.length){el.innerHTML='';return;}
+  el.innerHTML=recent.map(function(e){
+    var dt=new Date(e.created_at);
+    var when=fmtDate(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'));
+    var txt=(e.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return '<div class="journal-today-item"><div class="journal-today-when">'+when+'</div><div class="journal-today-text">'+txt+'</div></div>';
+  }).join('');
 }
 
 function renderJournal(){
@@ -3059,12 +3113,32 @@ function weatherDesc(code){
   if(code<=86)return{emoji:'🌨️',label:'snow showers'};
   return{emoji:'⛈️',label:'thunderstorm'};
 }
+var weatherPlace=(function(){try{var c=JSON.parse(localStorage.getItem('foodlog_place')||'null');return c&&c.name?c.name:'';}catch(e){return '';}})();
 function renderWeather(){
   var el=document.getElementById('weather-strip');if(!el)return;
   if(!weatherToday){el.textContent='';return;}
   var w=weatherToday;var wd=weatherDesc(w.weather_code);
   var t=(w.temp_mean!=null?Math.round(w.temp_mean):(w.temp_max!=null?Math.round(w.temp_max):null));
-  el.textContent=((wd.emoji?wd.emoji+' ':'')+(t!=null?t+'°':'')+(wd.label?' · '+wd.label:'')).trim();
+  var base=((wd.emoji?wd.emoji+' ':'')+(t!=null?t+'°':'')+(wd.label?' · '+wd.label:'')).trim();
+  var place=(weatherPlace||'').trim();
+  el.textContent=base+(place?' · 📍 '+place:'');
+}
+// Reverse-geocode coords → city name (free, no key, CORS-ok) so Clem can sanity-check the weather location
+function loadPlaceName(coords){
+  if(!coords)return;
+  try{var c=JSON.parse(localStorage.getItem('foodlog_place')||'null');
+    if(c&&c.name&&Math.abs(c.lat-coords.lat)<0.1&&Math.abs(c.lon-coords.lon)<0.1){weatherPlace=c.name;renderWeather();return;}
+  }catch(e){}
+  fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+coords.lat+'&longitude='+coords.lon+'&localityLanguage=en')
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(j){
+      if(!j)return;
+      var name=j.city||j.locality||j.principalSubdivision||j.countryName||'';
+      if(!name)return;
+      weatherPlace=name;
+      try{localStorage.setItem('foodlog_place',JSON.stringify({lat:coords.lat,lon:coords.lon,name:name}));}catch(e){}
+      renderWeather();
+    }).catch(function(){});
 }
 // Re-checks location each call (accepting a fix up to 1h old) and updates the
 // cache, so a move is detected; falls back to the last known coords if the
@@ -3084,6 +3158,7 @@ async function loadWeather(){
   try{
     var today=todayStr();
     var coords=await getCoords();
+    loadPlaceName(coords);
     var have=(weatherLogs||[]).find(function(w){return w.log_date===today;});
     var moved=function(h){return !(h&&h.lat!=null&&h.lon!=null&&coords&&Math.abs(h.lat-coords.lat)<0.1&&Math.abs(h.lon-coords.lon)<0.1);};
     // Reuse today's cached weather unless we've moved ~11km+ (or can't tell).
@@ -3705,11 +3780,12 @@ function renderInsights(){
 var TAB_DEF={
   today:{pages:[['log','Today']]},
   timeline:{pages:[['timeline','Timeline']]},
+  journal:{pages:[['journal','Journal']]},
   trends:{pages:[['dashboard','Dashboard'],['insights','Weekly'],['suggestions','Suggest'],['supptracker','Supplements']]}
 };
-var TAB_ORDER=['today','timeline','trends'];
+var TAB_ORDER=['today','timeline','journal','trends'];
 var pageToTab={};TAB_ORDER.forEach(function(t){TAB_DEF[t].pages.forEach(function(p){pageToTab[p[0]]=t;});});
-var tabLastPage={today:'log',timeline:'timeline',trends:'dashboard'};
+var tabLastPage={today:'log',timeline:'timeline',journal:'journal',trends:'dashboard'};
 
 function showTab(tabId){showPage(tabLastPage[tabId]||TAB_DEF[tabId].pages[0][0]);}
 
@@ -3733,10 +3809,11 @@ function showPage(name){
   var tabEl=document.getElementById('tab-'+tab);if(tabEl)tabEl.classList.add('active');
   document.querySelectorAll('.page').forEach(function(el){el.classList.remove('active');});
   document.getElementById('page-log').classList.remove('active');
-  if(name==='log'){document.getElementById('page-log').classList.add('active');renderDailyGoals();renderTodayLog();renderSavedMeals();renderSupplements();renderSubstances();}
+  if(name==='log'){document.getElementById('page-log').classList.add('active');renderDailyGoals();renderTodayLog();renderTodayJournal();renderSavedMeals();renderSupplements();renderSubstances();}
   else{
     var pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');
     if(name==='timeline')renderTimeline();
+    if(name==='journal')renderJournal();
     if(name==='dashboard')renderDashboard();
     if(name==='insights')renderInsights();
     if(name==='suggestions')loadSuggestions();
