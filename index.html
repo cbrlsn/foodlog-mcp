@@ -67,6 +67,13 @@
   #sidebar{width:228px;min-width:228px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 0 16px;}
   #main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--bg);}
   #main>*{position:relative;z-index:1;}
+  /* Pull-to-refresh (mobile) */
+  .ptr-indicator{position:absolute;top:0;left:0;right:0;height:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:6;overflow:hidden;opacity:0;}
+  .ptr-indicator.active{opacity:1;}
+  .ptr-spinner{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--border3);border-top-color:var(--accent);}
+  .ptr-indicator.refreshing{transition:height .2s var(--ease);}
+  .ptr-indicator.refreshing .ptr-spinner{animation:ptrspin .7s linear infinite;}
+  @keyframes ptrspin{to{transform:rotate(360deg);}}
   .logo{font-family:var(--font-display);font-size:21px;font-weight:600;color:var(--accent);padding:0 22px 20px;letter-spacing:-0.01em;}
   .nav-section{font-family:'Geist',-apple-system,sans-serif;font-size:9px;color:var(--text3);padding:14px 22px 6px;text-transform:uppercase;letter-spacing:0.14em;}
   .nav-item{display:flex;align-items:center;gap:11px;padding:9px 12px;margin:1px 10px;cursor:pointer;color:var(--text2);font-size:13.5px;border-radius:11px;transition:background .18s var(--ease),color .18s var(--ease);user-select:none;}
@@ -396,6 +403,28 @@
   .modal-nut-unit{font-size:11px;color:var(--text3);font-family:var(--font-mono);}
   .modal-ai-comment{background:var(--bg3);border-radius:var(--radius);padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.65;border-left:2px solid var(--accent);}
   .modal-ai-loading{color:var(--text3);font-style:italic;font-size:13px;}
+  /* ── Goals editor ── */
+  .goals-ed-section{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin:20px 0 8px;}
+  .goals-ed-section:first-child{margin-top:0;}
+  .goals-ed-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .goals-ed-icon{font-size:17px;width:24px;text-align:center;flex-shrink:0;}
+  .goals-ed-info{flex:1;min-width:0;}
+  .goals-ed-name{font-size:13px;font-weight:500;color:var(--text);}
+  .goals-ed-empty{font-size:12px;color:var(--text3);padding:4px 0 8px;}
+  .goal-switch{width:40px;height:23px;border-radius:12px;background:var(--bg4);border:1px solid var(--border2);position:relative;cursor:pointer;flex-shrink:0;transition:background .15s,border-color .15s;padding:0;}
+  .goal-switch span{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--text3);transition:transform .15s var(--ease),background .15s;}
+  .goal-switch.on{background:var(--accent-dim);border-color:rgba(var(--accent-rgb),0.5);}
+  .goal-switch.on span{transform:translateX(17px);background:var(--accent);}
+  .goals-ed-emoji{width:42px;flex-shrink:0;text-align:center;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:8px 0;font-size:15px;color:var(--text);outline:none;}
+  .goals-ed-name-input{flex:1;min-width:0;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:9px 12px;font-size:13px;color:var(--text);font-family:'Geist',-apple-system,sans-serif;outline:none;transition:border-color .15s;}
+  .goals-ed-name-input:focus,.goals-ed-emoji:focus{border-color:rgba(var(--accent-rgb),0.45);}
+  .goals-ed-del{width:32px;height:32px;flex-shrink:0;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);border-radius:9px;cursor:pointer;font-size:12px;transition:all .12s;}
+  .goals-ed-del:hover{color:var(--red);border-color:var(--red);}
+  .goals-ed-add{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .goals-ed-addbtn{background:var(--accent);color:var(--on-accent);border:none;border-radius:9px;padding:9px 17px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Geist',-apple-system,sans-serif;flex-shrink:0;transition:background .15s;}
+  .goals-ed-addbtn:hover{background:var(--accent2);}
+  .goals-ed-hint{font-size:11px;color:var(--text3);line-height:1.55;margin-top:18px;}
+  .goals-empty{font-size:12px;color:var(--text3);padding:6px 2px;}
   /* ── Suggestions ── */
   .suggest-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:13px;box-shadow:var(--card-hl),var(--shadow-card);transition:border-color .2s,transform .2s var(--ease);animation:riseIn .4s var(--ease) backwards;}
   .suggest-card:hover{border-color:var(--border2);transform:translateY(-2px);}
@@ -728,6 +757,8 @@
   }
   /* ===== end v39 ===== */
   @media (max-width: 760px){
+    /* match the bottom safe-area (home-indicator) strip to the nav bar so it isn't a black gap */
+    html,body{background:var(--bg2);}
     #app{flex-direction:column;}
     #main{order:1;flex:1;min-height:0;padding-top:env(safe-area-inset-top);}
     #main::before{display:none;}
@@ -846,6 +877,7 @@
   <button id="settings-gear" onclick="openSettings()" aria-label="Settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
 
   <div id="main">
+    <div id="ptr-indicator" class="ptr-indicator"><div class="ptr-spinner"></div></div>
     <div id="subtabs" class="subtabs"></div>
     <!-- TODAY (one continuous scroll) -->
     <div id="page-log" class="active">
@@ -915,7 +947,7 @@
           </div>
           <!-- Goals -->
           <div class="card kpi-card">
-            <div class="card-head"><span class="card-eyebrow">Today · goals</span><span class="goals-head-right"><span id="goals-count" class="goals-count"></span><button class="goals-pencil" title="Edit goals & targets" onclick="openSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></span></div>
+            <div class="card-head"><span class="card-eyebrow">Today · goals</span><span class="goals-head-right"><span id="goals-count" class="goals-count"></span><button class="goals-pencil" title="Add, remove or edit goals" onclick="openGoalsEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></span></div>
             <div id="daily-goals" class="today-goals"></div>
           </div>
         </div>
@@ -1179,6 +1211,16 @@
 </div>
 
 <!-- Entry detail modal -->
+<div class="modal-overlay" id="goals-modal" onclick="if(event.target===this)closeGoalsEditor()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit goals</div>
+      <button class="modal-close" onclick="closeGoalsEditor()">✕</button>
+    </div>
+    <div id="goals-editor-body"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="entry-modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
@@ -1247,7 +1289,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v40.2 · 2026-06-25 · hourly weather + location refresh';
+var APP_BUILD = 'v41 · 2026-06-25 · editable goals + pull-to-refresh + mobile bottom fix';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -3186,40 +3228,140 @@ async function loadWeather(force){
   }catch(e){console.warn('weather load failed',e);}
 }
 
+// ── Pull-to-refresh (mobile): pull down at the top of a page to reload data ──
+(function(){
+  var startY=0,pulling=false,dist=0,ready=false,curSc=null;
+  var THRESH=68,DAMP=0.5,MAX=120;
+  function scroller(){return document.querySelector('#page-log.active')||document.querySelector('.page.active');}
+  function ind(){return document.getElementById('ptr-indicator');}
+  function onStart(e){
+    if(window.innerWidth>760||!e.touches||e.touches.length!==1)return;
+    if(document.querySelector('.modal-overlay.open,.settings-drawer.open'))return;
+    if(e.target&&e.target.closest&&e.target.closest('#chat-messages'))return;
+    curSc=scroller();
+    if(!curSc||curSc.scrollTop>0){pulling=false;return;}
+    startY=e.touches[0].clientY;pulling=true;dist=0;ready=false;
+  }
+  function onMove(e){
+    if(!pulling)return;
+    if(!curSc||curSc.scrollTop>0){snapBack();pulling=false;return;}
+    var dy=e.touches[0].clientY-startY;
+    if(dy<=0){snapBack();return;}
+    dist=Math.min(dy*DAMP,MAX);
+    var i=ind();
+    if(i){i.classList.add('active');i.style.height=dist+'px';var sp=i.querySelector('.ptr-spinner');if(sp)sp.style.transform='rotate('+(dist/THRESH*270)+'deg)';}
+    if(curSc){curSc.style.transition='';curSc.style.transform='translateY('+dist+'px)';}
+    ready=dist>=THRESH;
+    e.preventDefault();
+  }
+  function onEnd(){
+    if(!pulling)return;pulling=false;
+    var i=ind();
+    if(ready&&i){
+      i.classList.add('refreshing');i.style.height='50px';
+      if(curSc){curSc.style.transition='transform .2s var(--ease)';curSc.style.transform='translateY(50px)';}
+      var done=function(){
+        if(curSc){curSc.style.transition='transform .25s var(--ease)';curSc.style.transform='';}
+        if(i){i.style.height='0';i.classList.remove('active','refreshing');}
+        if(navigator.vibrate){try{navigator.vibrate(8);}catch(e){}}
+      };
+      Promise.resolve().then(function(){return (typeof loadAllData==='function')?loadAllData():null;}).catch(function(){}).then(function(){setTimeout(done,450);});
+    }else{snapBack();}
+  }
+  function snapBack(){
+    var i=ind();if(i){i.style.height='0';i.classList.remove('active','refreshing');}
+    if(curSc){curSc.style.transition='transform .2s var(--ease)';curSc.style.transform='';}
+    dist=0;ready=false;
+  }
+  document.addEventListener('touchstart',onStart,{passive:true});
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onEnd,{passive:true});
+  document.addEventListener('touchcancel',function(){if(pulling){pulling=false;snapBack();}},{passive:true});
+})();
+
+// ── Goals config (editable: toggle built-ins + add custom check-offs) ──────
+var DEFAULT_GOALS_CONFIG={builtins:{supplements:true,weight:true,exercise:true,hydration:true,food:true,mood:true},custom:[]};
+function loadGoalsConfig(){try{var c=JSON.parse(localStorage.getItem('fl-goals')||'null');if(c&&c.builtins){c.custom=c.custom||[];return c;}}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_GOALS_CONFIG));}
+var goalsConfig=loadGoalsConfig();
+function saveGoalsConfig(){try{localStorage.setItem('fl-goals',JSON.stringify(goalsConfig));}catch(e){}}
+function customDoneToday(){try{var m=JSON.parse(localStorage.getItem('fl-goals-done')||'{}');return m[todayStr()]||[];}catch(e){return [];}}
+function toggleCustomGoal(id){var m={};try{m=JSON.parse(localStorage.getItem('fl-goals-done')||'{}');}catch(e){}var t=todayStr();m[t]=m[t]||[];var i=m[t].indexOf(id);if(i>=0)m[t].splice(i,1);else m[t].push(id);try{localStorage.setItem('fl-goals-done',JSON.stringify(m));}catch(e){}renderDailyGoals();}
+function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function openGoalsEditor(){renderGoalsEditor();var m=document.getElementById('goals-modal');if(m)m.classList.add('open');}
+function closeGoalsEditor(){var m=document.getElementById('goals-modal');if(m)m.classList.remove('open');}
+function toggleBuiltinGoal(key){goalsConfig.builtins[key]=(goalsConfig.builtins[key]===false);saveGoalsConfig();renderGoalsEditor();renderDailyGoals();}
+function addCustomGoal(){var n=document.getElementById('goal-new-name');var e=document.getElementById('goal-new-emoji');if(!n)return;var name=(n.value||'').trim();if(!name){showToast('name your goal');return;}goalsConfig.custom=goalsConfig.custom||[];goalsConfig.custom.push({id:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:name,icon:((e&&e.value)||'⭐').trim()||'⭐'});saveGoalsConfig();renderGoalsEditor();renderDailyGoals();}
+function renameCustomGoal(id,name,icon){(goalsConfig.custom||[]).forEach(function(c){if(c.id===id){if(name!=null){var nm=name.trim();if(nm)c.name=nm;}if(icon!=null){var ic=icon.trim();c.icon=ic||'⭐';}}});saveGoalsConfig();renderDailyGoals();}
+function deleteCustomGoal(id){goalsConfig.custom=(goalsConfig.custom||[]).filter(function(c){return c.id!==id;});saveGoalsConfig();renderGoalsEditor();renderDailyGoals();}
+function renderGoalsEditor(){
+  var body=document.getElementById('goals-editor-body');if(!body)return;
+  var cfg=goalsConfig;
+  var builtins=[
+    {key:'supplements',name:'Take supplements',icon:'💊'},
+    {key:'weight',name:'Log weight',icon:'⚖️'},
+    {key:'exercise',name:'Exercise',icon:'🏃'},
+    {key:'hydration',name:'Hydration target',icon:'💧'},
+    {key:'food',name:'Log food',icon:'🍽️'},
+    {key:'mood',name:'Log mood',icon:'🙂'}
+  ];
+  var h='<div class="goals-ed-section">Tracked automatically</div>';
+  builtins.forEach(function(b){
+    var on=cfg.builtins[b.key]!==false;
+    h+='<div class="goals-ed-row"><span class="goals-ed-icon">'+b.icon+'</span>'
+      +'<div class="goals-ed-info"><div class="goals-ed-name">'+b.name+'</div></div>'
+      +'<button class="goal-switch'+(on?' on':'')+'" onclick="toggleBuiltinGoal(\''+b.key+'\')" aria-label="toggle '+b.name+'"><span></span></button></div>';
+  });
+  h+='<div class="goals-ed-section">Your own goals</div>';
+  if(!(cfg.custom||[]).length)h+='<div class="goals-ed-empty">None yet — add a daily check-off below.</div>';
+  (cfg.custom||[]).forEach(function(c){
+    h+='<div class="goals-ed-row">'
+      +'<input class="goals-ed-emoji" value="'+escAttr(c.icon||'⭐')+'" maxlength="2" onchange="renameCustomGoal(\''+c.id+'\',null,this.value)">'
+      +'<input class="goals-ed-name-input" value="'+escAttr(c.name)+'" onchange="renameCustomGoal(\''+c.id+'\',this.value,null)">'
+      +'<button class="goals-ed-del" onclick="deleteCustomGoal(\''+c.id+'\')" aria-label="delete">✕</button></div>';
+  });
+  h+='<div class="goals-ed-add">'
+    +'<input class="goals-ed-emoji" id="goal-new-emoji" value="⭐" maxlength="2">'
+    +'<input class="goals-ed-name-input" id="goal-new-name" placeholder="Add a goal — e.g. Meditate" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addCustomGoal();}">'
+    +'<button class="goals-ed-addbtn" onclick="addCustomGoal()">add</button></div>';
+  h+='<div class="goals-ed-hint">Custom goals are check-offs you tap on the Today card. Built-ins fill in automatically as you log. Saved on this device.</div>';
+  body.innerHTML=h;
+}
+
 function renderDailyGoals(){
   var el=document.getElementById('daily-goals');
   var scoreEl=document.getElementById('goals-score');
   if(!el)return;
   var today=todayStr();
-  // Auto-detect goals
+  var B=goalsConfig.builtins||{};
   var goals=[];
   // 1. Supplements
-  if(suppTypes.length>0){
+  if(B.supplements!==false && suppTypes.length>0){
     var allTaken=suppTypes.every(function(st){return suppLogs.some(function(l){return l.supplement_id===st.id&&l.date===today;});});
     var takenCount=suppTypes.filter(function(st){return suppLogs.some(function(l){return l.supplement_id===st.id&&l.date===today;});}).length;
-    goals.push({name:'Take supplements',done:allTaken,detail:takenCount+'/'+suppTypes.length,icon:'💊',color:'var(--accent)'});
+    goals.push({name:'Take supplements',done:allTaken,detail:takenCount+'/'+suppTypes.length,icon:'💊'});
   }
   // 2. Weight logged
-  var weightDone=weights.some(function(w){return w.date===today;});
-  goals.push({name:'Log weight',done:weightDone,detail:weightDone?'done':'not yet',icon:'⚖️',color:'var(--blue)'});
+  if(B.weight!==false){var weightDone=weights.some(function(w){return w.date===today;});goals.push({name:'Log weight',done:weightDone,detail:weightDone?'done':'not yet',icon:'⚖️'});}
   // 3. Activity
-  var actDone=activities.some(function(a){return a.date===today;});
-  goals.push({name:'Exercise',done:actDone,detail:actDone?'done':'not yet',icon:'🏃',color:'var(--teal)'});
+  if(B.exercise!==false){var actDone=activities.some(function(a){return a.date===today;});goals.push({name:'Exercise',done:actDone,detail:actDone?'done':'not yet',icon:'🏃'});}
   // 4. Hydration
-  var todayHydration=entries.filter(function(e){return e.date===today;}).reduce(function(s,e){return s+getHydrationMl(e);},0);
-  var waterTarget=calcWaterTarget(userProfile,activities.some(function(a){return a.date===today;}));
-  var hydDone=todayHydration>=waterTarget;
-  goals.push({name:'Hydration target',done:hydDone,detail:Math.round(todayHydration/100)/10+'L / '+(waterTarget/1000).toFixed(1)+'L',icon:'💧',color:'var(--water)'});
+  if(B.hydration!==false){
+    var todayHydration=entries.filter(function(e){return e.date===today;}).reduce(function(s,e){return s+getHydrationMl(e);},0);
+    var waterTarget=calcWaterTarget(userProfile,activities.some(function(a){return a.date===today;}));
+    var hydDone=todayHydration>=waterTarget;
+    goals.push({name:'Hydration target',done:hydDone,detail:Math.round(todayHydration/100)/10+'L / '+(waterTarget/1000).toFixed(1)+'L',icon:'💧'});
+  }
   // 5. Log food
-  var foodDone=entries.some(function(e){return e.date===today&&e.meal!=='water';});
-  goals.push({name:'Log food',done:foodDone,detail:foodDone?'done':'not yet',icon:'🍽️',color:'var(--amber)'});
+  if(B.food!==false){var foodDone=entries.some(function(e){return e.date===today&&e.meal!=='water';});goals.push({name:'Log food',done:foodDone,detail:foodDone?'done':'not yet',icon:'🍽️'});}
   // 6. Log mood
-  var moodDone=(moodLogs||[]).some(function(m){return m.date===today;});
-  goals.push({name:'Log mood',done:moodDone,detail:moodDone?'done':'not yet',icon:'🙂',color:'var(--accent)'});
+  if(B.mood!==false){var moodDone=(moodLogs||[]).some(function(m){return m.date===today;});goals.push({name:'Log mood',done:moodDone,detail:moodDone?'done':'not yet',icon:'🙂'});}
+  // 7. Custom (manual check-off)
+  var cdone=customDoneToday();
+  (goalsConfig.custom||[]).forEach(function(c){var d=cdone.indexOf(c.id)>=0;goals.push({name:c.name,done:d,detail:d?'done':'tap to mark',icon:c.icon||'⭐',custom:true,id:c.id});});
 
   var doneCount=goals.filter(function(g){return g.done;}).length;
   var pct=goals.length?Math.round(doneCount/goals.length*100):0;
-  if(scoreEl)scoreEl.textContent="You're "+pct+"% to today's goals.";
+  if(scoreEl)scoreEl.textContent=goals.length?("You're "+pct+"% to today's goals."):"No goals set — tap ✎ to add some.";
   var gc=document.getElementById('goals-count');
   if(gc)gc.textContent=doneCount+' / '+goals.length;
   var ge=document.getElementById('today-focus-greeting');
@@ -3227,9 +3369,10 @@ function renderDailyGoals(){
   var ml=document.getElementById('today-meta-line');
   if(ml){var now=new Date();var days=['SUN','MON','TUE','WED','THU','FRI','SAT'];var mons=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];ml.textContent=days[now.getDay()]+' · '+now.getDate()+' '+mons[now.getMonth()]+' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');}
 
+  if(!goals.length){el.innerHTML='<div class="goals-empty">No goals yet — tap ✎ to add one.</div>';return;}
   var html='';
   goals.forEach(function(g){
-    html+='<div class="supp-row'+(g.done?' taken':'')+'" style="cursor:default;">'
+    html+='<div class="supp-row'+(g.done?' taken':'')+'"'+(g.custom?' onclick="toggleCustomGoal(\''+g.id+'\')" style="cursor:pointer;"':' style="cursor:default;"')+'>'
       +'<div class="supp-check">'+(g.done?'✓':'')+'</div>'
       +'<div style="font-size:16px;flex-shrink:0;">'+g.icon+'</div>'
       +'<div class="supp-info"><div class="supp-name">'+g.name+'</div>'
