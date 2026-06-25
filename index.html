@@ -1247,7 +1247,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v40 · 2026-06-25 · Today + Timeline polish + Journal page';
+var APP_BUILD = 'v40.2 · 2026-06-25 · hourly weather + location refresh';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -1510,6 +1510,13 @@ async function loadAllData() {
     renderMood();
     renderWeather();
     loadWeather();
+    // Refresh location + weather every hour while open; also when re-opened after >1h (timers pause in the background). Set up once.
+    if(!window._weatherTimer){
+      window._weatherTimer=setInterval(function(){loadWeather(true);},3600000);
+      document.addEventListener('visibilitychange',function(){
+        if(!document.hidden&&Date.now()-(window._lastWeatherFetch||0)>3600000)loadWeather(true);
+      });
+    }
     renderSavedMeals();
     renderSupplements();
     renderSubstances();
@@ -3153,15 +3160,15 @@ function getCoords(){
     },function(){resolve(cached());},{timeout:8000,maximumAge:3600000,enableHighAccuracy:false});
   });
 }
-async function loadWeather(){
+async function loadWeather(force){
   try{
     var today=todayStr();
     var coords=await getCoords();
     loadPlaceName(coords);
     var have=(weatherLogs||[]).find(function(w){return w.log_date===today;});
     var moved=function(h){return !(h&&h.lat!=null&&h.lon!=null&&coords&&Math.abs(h.lat-coords.lat)<0.1&&Math.abs(h.lon-coords.lon)<0.1);};
-    // Reuse today's cached weather unless we've moved ~11km+ (or can't tell).
-    if(have&&(!coords||!moved(have))){weatherToday=have;renderWeather();return;}
+    // Reuse today's cached weather unless: forced (hourly tick), we've moved ~11km+, or we can't tell.
+    if(!force&&have&&(!coords||!moved(have))){weatherToday=have;renderWeather();return;}
     if(!coords){if(have){weatherToday=have;renderWeather();}return;}
     var url='https://api.open-meteo.com/v1/forecast?latitude='+coords.lat+'&longitude='+coords.lon+'&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,sunshine_duration&timezone=auto&forecast_days=1';
     var res=await fetch(url);if(!res.ok){if(have){weatherToday=have;renderWeather();}return;}var j=await res.json();
@@ -3174,6 +3181,7 @@ async function loadWeather(){
     }
     weatherToday=row;
     weatherLogs=(weatherLogs||[]).filter(function(w){return w.log_date!==row.log_date;});weatherLogs.push(row);
+    window._lastWeatherFetch=Date.now();
     renderWeather();
   }catch(e){console.warn('weather load failed',e);}
 }
