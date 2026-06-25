@@ -591,7 +591,7 @@
   .today-hero{display:grid;grid-template-columns:480px 1fr;gap:16px;align-items:stretch;}
   .arc-card{display:flex;flex-direction:column;}
   .arc-togoal{font-family:var(--font-mono);font-size:11px;color:var(--accent);font-variant-numeric:tabular-nums;}
-  .kcal-gauge{position:relative;width:100%;max-width:300px;margin:6px auto 0;height:188px;}
+  .kcal-gauge{position:relative;width:100%;max-width:360px;margin:6px auto 0;height:226px;}
   .kcal-gauge-svg{width:100%;height:100%;overflow:visible;}
   .kg-track{fill:none;stroke:var(--bg4);stroke-width:13;stroke-linecap:round;}
   .kg-prog{fill:none;stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset 1s var(--ease);}
@@ -615,7 +615,7 @@
   .intake-meal{display:flex;flex-direction:column;gap:2px;}
   .intake-meal-name{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;text-transform:capitalize;color:var(--text3);}
   .intake-meal-kcal{font-family:var(--font-mono);font-size:12px;color:var(--text);font-variant-numeric:tabular-nums;}
-  .chat-card{display:flex;flex-direction:column;height:467px;padding:0;overflow:hidden;}
+  .chat-card{display:flex;flex-direction:column;height:505px;padding:0;overflow:hidden;}
   .chat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 16px;border-bottom:1px solid var(--border);}
   .chat-head-id{display:flex;align-items:center;gap:10px;}
   .coach-orb{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#d8b4fe,var(--ai));flex-shrink:0;box-shadow:0 0 12px var(--ai-dim);}
@@ -763,9 +763,10 @@
     #app{flex-direction:column;position:fixed;inset:0;height:auto;}
     #main{order:1;flex:1;min-height:0;padding-top:env(safe-area-inset-top);}
     #main::before{display:none;}
-    #sidebar{order:2;width:100%;min-width:0;height:auto;flex-direction:row;padding:0;
-      border-right:none;border-top:1px solid var(--border2);
-      padding-bottom:env(safe-area-inset-bottom);background:var(--bg2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--border2);}
+    /* Bottom nav glued to the true viewport bottom; its bg fills the home-indicator safe area so there is no gap below it */
+    #sidebar{position:fixed;left:0;right:0;bottom:0;z-index:40;width:100%;min-width:0;height:auto;flex-direction:row;
+      padding:0 0 env(safe-area-inset-bottom);border-right:none;border-top:1px solid var(--border2);
+      background:var(--bg2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
     .logo,.logo-row,.nav-section,.sidebar-bottom{display:none;}
     .nav-item{flex:1;flex-direction:column;gap:3px;padding:8px 2px 7px;margin:0;font-size:9px;
       font-family:'Geist',-apple-system,sans-serif;border-radius:0;border-top:2px solid transparent;
@@ -795,11 +796,11 @@
     .trends-streams{grid-template-columns:1fr 1fr;}
     .trends-chart-wrap{height:200px;}
     .chat-card{min-height:340px;}
-    .kcal-gauge{max-width:260px;height:170px;}
+    .kcal-gauge{max-width:312px;height:204px;}
     .chat-card #chat-messages{max-height:240px;padding:14px;}
     .subtabs{padding:9px 58px 9px 12px;}
     #chat-input{font-size:16px;}
-    .chat-card #chat-input{min-height:62px;}
+    .chat-card #chat-input{min-height:46px;}
     #settings-gear{display:flex;}
     .settings-panel{padding:calc(20px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom));}
     .msg-user .msg-body{max-width:88%;}
@@ -925,7 +926,7 @@
             </div>
             <div id="chat-input-area">
               <button class="chat-cam" type="button" title="Photo logging — coming soon" aria-label="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
-              <textarea id="chat-input" placeholder="what did you eat, do, or feel?" rows="1"></textarea>
+              <textarea id="chat-input" placeholder="log anything…" rows="1"></textarea>
               <button class="chat-mic" type="button" title="Voice — coming soon" aria-label="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></button>
               <button id="send-btn" onclick="sendMessage()" aria-label="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
             </div>
@@ -1290,7 +1291,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v41.1 · 2026-06-25 · mobile shell pinned + shorter chat placeholder';
+var APP_BUILD = 'v41.2 · 2026-06-25 · fixed bottom nav + bigger arc + 1-line chat input';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
