@@ -759,7 +759,8 @@
   @media (max-width: 760px){
     /* match the bottom safe-area (home-indicator) strip to the nav bar so it isn't a black gap */
     html,body{background:var(--bg2);}
-    #app{flex-direction:column;}
+    /* pin the shell to the real viewport so the nav reaches the physical bottom (100dvh can fall short in a standalone PWA) */
+    #app{flex-direction:column;position:fixed;inset:0;height:auto;}
     #main{order:1;flex:1;min-height:0;padding-top:env(safe-area-inset-top);}
     #main::before{display:none;}
     #sidebar{order:2;width:100%;min-width:0;height:auto;flex-direction:row;padding:0;
@@ -924,7 +925,7 @@
             </div>
             <div id="chat-input-area">
               <button class="chat-cam" type="button" title="Photo logging — coming soon" aria-label="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
-              <textarea id="chat-input" placeholder="describe what you ate, did, or felt…" rows="1"></textarea>
+              <textarea id="chat-input" placeholder="what did you eat, do, or feel?" rows="1"></textarea>
               <button class="chat-mic" type="button" title="Voice — coming soon" aria-label="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></button>
               <button id="send-btn" onclick="sendMessage()" aria-label="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
             </div>
@@ -1289,7 +1290,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v41 · 2026-06-25 · editable goals + pull-to-refresh + mobile bottom fix';
+var APP_BUILD = 'v41.1 · 2026-06-25 · mobile shell pinned + shorter chat placeholder';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
