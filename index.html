@@ -1292,7 +1292,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v41.3 · 2026-06-27 · kill nav backdrop-filter (iOS safe-area gap)';
+var APP_BUILD = 'v41.4 · 2026-06-27 · fix kcal arc fill (was full at 67%)';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -1690,14 +1690,16 @@ function renderKcalGauge(){
   var eaten=Math.round(t.calories||0);
   var frac=target>0?Math.min(eaten/target,1):0;
   var over=eaten>target;
-  var off=(367*(1-frac)).toFixed(1);
+  // Arc path below is a 180° semicircle of r=78 → length = π·78 ≈ 245.04 (NOT 367, which is a 270° arc).
+  var ARC_LEN=245.04;
+  var off=(ARC_LEN*(1-frac)).toFixed(1);
   var stroke=over?'var(--red)':'url(#calGrad)';
 
   el.innerHTML=
       '<div class="kcal-gauge">'
     + '<svg class="kcal-gauge-svg" viewBox="0 0 200 170">'
     + '<path class="kg-track" d="M 22 140 A 78 78 0 1 1 178 140"/>'
-    + '<path class="kg-prog" style="stroke:'+stroke+';stroke-dasharray:367;stroke-dashoffset:'+off+'" d="M 22 140 A 78 78 0 1 1 178 140"/>'
+    + '<path class="kg-prog" style="stroke:'+stroke+';stroke-dasharray:'+ARC_LEN+';stroke-dashoffset:'+off+'" d="M 22 140 A 78 78 0 1 1 178 140"/>'
     + '<defs><linearGradient id="calGrad" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>'
     + '</svg>'
     + '<div class="kcal-gauge-center">'
