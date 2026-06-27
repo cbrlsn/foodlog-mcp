@@ -23,7 +23,8 @@ Standing instructions for working on foodlog. Read this first every session.
 2. Make targeted edits to `index.html` / `index.js` in place.
 3. **Validate every build** (see below).
 4. Bump `APP_BUILD` (sidebar stamp confirms the deploy).
-5. `git add -A && git commit -m "vXX: ..." && git push origin main`.
+5. **Update `CHANGELOG.md`** — ALWAYS add an entry under a new version heading (newest first) describing what changed, before committing. No change ships without a changelog entry. Keep it detailed enough that the entry alone explains the change.
+6. `git add -A && git commit -m "vXX: ..." && git push origin main`.
 - **If push is rejected (divergence):** `git fetch origin && git reset --hard origin/main`, then re-apply edits. Local edits you just made are the intended source.
 - Schema changes ship as separate `.sql` files → Clem runs them in the **Supabase SQL Editor** (they are NOT deployed).
 - *(Obsolete note: the old "download to ~/Downloads, rm -f the dupe, cp into repo" dance only applied to the chat workflow. In Claude Code you edit the repo file directly — skip all of that.)*
