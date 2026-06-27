@@ -6,7 +6,7 @@
    - same-origin static (icons, manifest) -> cache-first.
    - cross-origin (Supabase, Render API, CDNs) -> passthrough, never cached.
 */
-const CACHE = 'foodlog-shell-v3';
+const CACHE = 'foodlog-shell-v4';
 const SHELL = [
   './',
   './index.html',
@@ -39,6 +39,9 @@ self.addEventListener('fetch', (event) => {
 
   // Cross-origin (Supabase / Render API / CDNs): let the network handle it.
   if (!sameOrigin) return;
+
+  // Cache-busted version checks (?v=…): always go to network, never cache.
+  if (url.searchParams.has('v')) return;
 
   const isNavigation = req.mode === 'navigate' ||
     (req.headers.get('accept') || '').includes('text/html');

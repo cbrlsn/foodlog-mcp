@@ -1292,7 +1292,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v41.4 · 2026-06-27 · fix kcal arc fill (was full at 67%)';
+var APP_BUILD = 'v41.5 · 2026-06-27 · PWA auto-update + safe-area diagnostic';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -3270,6 +3270,7 @@ async function loadWeather(force){
         if(i){i.style.height='0';i.classList.remove('active','refreshing');}
         if(navigator.vibrate){try{navigator.vibrate(8);}catch(e){}}
       };
+      if(typeof checkForUpdate==='function')checkForUpdate();
       Promise.resolve().then(function(){return (typeof loadAllData==='function')?loadAllData():null;}).catch(function(){}).then(function(){setTimeout(done,450);});
     }else{snapBack();}
   }
@@ -3282,6 +3283,51 @@ async function loadWeather(force){
   document.addEventListener('touchmove',onMove,{passive:false});
   document.addEventListener('touchend',onEnd,{passive:true});
   document.addEventListener('touchcancel',function(){if(pulling){pulling=false;snapBack();}},{passive:true});
+})();
+
+// ── Auto-update ───────────────────────────────────────────────────
+// iOS keeps home-screen PWAs suspended; a resume/pull-to-refresh reloads data
+// but NOT the page, so new deploys never load. Fetch the live index.html, compare
+// APP_BUILD, and hard-reload if it changed. Runs on resume, focus, and at startup.
+var _updateChecking=false;
+function checkForUpdate(){
+  if(_updateChecking)return;
+  _updateChecking=true;
+  fetch('./index.html?v='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.ok?r.text():null;})
+    .then(function(html){
+      _updateChecking=false;
+      if(!html)return;
+      var m=html.match(/APP_BUILD\s*=\s*'([^']+)'/);
+      if(m&&m[1]&&typeof APP_BUILD!=='undefined'&&m[1]!==APP_BUILD){
+        console.log('[foodlog] new build',m[1],'— reloading');
+        location.reload();
+      }
+    })
+    .catch(function(){_updateChecking=false;});
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden)checkForUpdate();});
+window.addEventListener('focus',checkForUpdate);
+setTimeout(checkForUpdate,3000);
+
+// ── TEMP diagnostic (standalone PWA only): build + safe-area + viewport sizes ──
+// Tap to dismiss. Lets us see the real iOS numbers behind the bottom-strip issue.
+(function(){
+  var standalone=(window.navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+  if(!standalone||window.innerWidth>760)return;
+  var probe=document.createElement('div');
+  probe.style.cssText='position:fixed;bottom:0;left:0;width:0;height:env(safe-area-inset-bottom);pointer-events:none;visibility:hidden;';
+  document.body.appendChild(probe);
+  var badge=document.createElement('div');
+  badge.style.cssText='position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 2px);transform:translateX(-50%);z-index:9999;background:rgba(220,70,70,.92);color:#fff;font:10px/1.2 ui-monospace,monospace;padding:3px 9px;border-radius:8px;text-align:center;';
+  badge.onclick=function(){badge.remove();probe.remove();};
+  function upd(){
+    var sab=Math.round(probe.getBoundingClientRect().height);
+    var sh=(window.screen&&window.screen.height)||0;
+    badge.textContent=(APP_BUILD.split(' · ')[0])+'  sab='+sab+'  ih='+window.innerHeight+'  sh='+sh+'  (tap to hide)';
+  }
+  document.body.appendChild(badge);upd();
+  window.addEventListener('resize',upd);setTimeout(upd,600);
 })();
 
 // ── Goals config (editable: toggle built-ins + add custom check-offs) ──────
