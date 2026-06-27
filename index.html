@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2314150f'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='20' font-weight='600' fill='%234fae84'%3Ef%3C/text%3E%3C/svg%3E">
 <title>foodlog</title>
-<meta name="theme-color" content="#09090b">
+<meta name="theme-color" content="#131316">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -763,10 +763,11 @@
     #app{flex-direction:column;position:fixed;inset:0;height:auto;}
     #main{order:1;flex:1;min-height:0;padding-top:env(safe-area-inset-top);}
     #main::before{display:none;}
-    /* Bottom nav glued to the true viewport bottom; its bg fills the home-indicator safe area so there is no gap below it */
+    /* Bottom nav glued to the true viewport bottom; solid opaque bg (NO backdrop-filter — it breaks
+       position:fixed + safe-area coverage on iOS) fills the home-indicator area so there's no gap below it. */
     #sidebar{position:fixed;left:0;right:0;bottom:0;z-index:40;width:100%;min-width:0;height:auto;flex-direction:row;
       padding:0 0 env(safe-area-inset-bottom);border-right:none;border-top:1px solid var(--border2);
-      background:var(--bg2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+      background:var(--bg2);}
     .logo,.logo-row,.nav-section,.sidebar-bottom{display:none;}
     .nav-item{flex:1;flex-direction:column;gap:3px;padding:8px 2px 7px;margin:0;font-size:9px;
       font-family:'Geist',-apple-system,sans-serif;border-radius:0;border-top:2px solid transparent;
@@ -1291,7 +1292,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v41.2 · 2026-06-25 · fixed bottom nav + bigger arc + 1-line chat input';
+var APP_BUILD = 'v41.3 · 2026-06-27 · kill nav backdrop-filter (iOS safe-area gap)';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".

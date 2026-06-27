@@ -6,7 +6,7 @@
    - same-origin static (icons, manifest) -> cache-first.
    - cross-origin (Supabase, Render API, CDNs) -> passthrough, never cached.
 */
-const CACHE = 'foodlog-shell-v2';
+const CACHE = 'foodlog-shell-v3';
 const SHELL = [
   './',
   './index.html',
