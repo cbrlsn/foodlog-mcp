@@ -16,6 +16,9 @@ All notable changes to **foodlog** are recorded here, newest first.
 
 > `redesign-v39` was merged (fast-forward) into `main` at v41.5; both branches continue from there.
 
+### [v42.2] — 2026-06-28
+- **Weather strip now shows live current conditions** instead of the day's mean. The Open-Meteo call adds `current=temperature_2m,weather_code` (updates ~every 15 min); `loadWeather` always fetches fresh (cached daily row is now only an offline fallback) so the displayed temp/condition reflect *now* and refresh on the existing hourly timer + on app resume. The persisted `weather_logs` row still stores the **daily** aggregates (max/min/mean/precip/sunshine) so weekly insights correlate on day-level weather — no schema change.
+
 ### [v42.1] — 2026-06-28
 - **Insights digest — period selector.** Added an intuitive segmented control to the Insights tab: **This week** (Mon→today), **Last week** (full Mon–Sun), **Last 30 days**. The active period is highlighted and periods that already have a cached digest show a small accent dot. Each period caches separately (`fl-insights-{period}-{endDate}`) so switching or returning doesn't re-call Sonnet; the hero badge + timestamp reflect the selected range.
 - **Backend:** `/api/insights` now accepts an optional `from`/`to` date range (frontend computes it per period), capped at 40 days; falls back to last-7 if absent. System prompt generalised from "one week" to "a period (up to a month)".

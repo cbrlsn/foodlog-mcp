@@ -1309,7 +1309,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v42.1 · 2026-06-28 · insights digest — period selector (this/last week, last 30 days)';
+var APP_BUILD = 'v42.2 · 2026-06-28 · weather strip → live current conditions (hourly)';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -3187,8 +3187,11 @@ var weatherPlace=(function(){try{var c=JSON.parse(localStorage.getItem('foodlog_
 function renderWeather(){
   var el=document.getElementById('weather-strip');if(!el)return;
   if(!weatherToday){el.textContent='';return;}
-  var w=weatherToday;var wd=weatherDesc(w.weather_code);
-  var t=(w.temp_mean!=null?Math.round(w.temp_mean):(w.temp_max!=null?Math.round(w.temp_max):null));
+  var w=weatherToday;
+  // Prefer the live current reading; fall back to the day's aggregates.
+  var code=(w.weather_code_now!=null?w.weather_code_now:w.weather_code);
+  var wd=weatherDesc(code);
+  var t=(w.temp_now!=null?Math.round(w.temp_now):(w.temp_mean!=null?Math.round(w.temp_mean):(w.temp_max!=null?Math.round(w.temp_max):null)));
   var base=((wd.emoji?wd.emoji+' ':'')+(t!=null?t+'°':'')+(wd.label?' · '+wd.label:'')).trim();
   var place=(weatherPlace||'').trim();
   el.textContent=base+(place?' · 📍 '+place:'');
@@ -3230,21 +3233,23 @@ async function loadWeather(force){
     var coords=await getCoords();
     loadPlaceName(coords);
     var have=(weatherLogs||[]).find(function(w){return w.log_date===today;});
-    var moved=function(h){return !(h&&h.lat!=null&&h.lon!=null&&coords&&Math.abs(h.lat-coords.lat)<0.1&&Math.abs(h.lon-coords.lon)<0.1);};
-    // Reuse today's cached weather unless: forced (hourly tick), we've moved ~11km+, or we can't tell.
-    if(!force&&have&&(!coords||!moved(have))){weatherToday=have;renderWeather();return;}
+    // Always fetch the live current conditions (hourly-resolution); the cached
+    // daily row is only a fallback when offline / no coords.
     if(!coords){if(have){weatherToday=have;renderWeather();}return;}
-    var url='https://api.open-meteo.com/v1/forecast?latitude='+coords.lat+'&longitude='+coords.lon+'&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,sunshine_duration&timezone=auto&forecast_days=1';
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+coords.lat+'&longitude='+coords.lon+'&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,sunshine_duration&timezone=auto&forecast_days=1';
     var res=await fetch(url);if(!res.ok){if(have){weatherToday=have;renderWeather();}return;}var j=await res.json();
     var d=j.daily;if(!d||!d.time||!d.time.length){if(have){weatherToday=have;renderWeather();}return;}
     var g=function(a){return a&&a.length?a[0]:null;};
+    var cur=j.current||{};
+    // Persisted row keeps the DAILY aggregates (what insights correlate on).
     var row={user_id:currentUser?currentUser.id:null,log_date:d.time[0],temp_max:g(d.temperature_2m_max),temp_min:g(d.temperature_2m_min),temp_mean:g(d.temperature_2m_mean),precip_mm:g(d.precipitation_sum),sunshine_hours:(d.sunshine_duration&&d.sunshine_duration.length)?Math.round(d.sunshine_duration[0]/360)/10:null,weather_code:g(d.weather_code),lat:coords.lat,lon:coords.lon};
     if(supabaseClient&&currentUser){
       var {data,error}=await supabaseClient.from('weather_logs').upsert(row,{onConflict:'user_id,log_date'}).select().single();
       if(!error&&data){row.id=data.id;}
     }
-    weatherToday=row;
     weatherLogs=(weatherLogs||[]).filter(function(w){return w.log_date!==row.log_date;});weatherLogs.push(row);
+    // Display object adds the live current reading (not persisted).
+    weatherToday=Object.assign({},row,{temp_now:(cur.temperature_2m!=null?cur.temperature_2m:null),weather_code_now:(cur.weather_code!=null?cur.weather_code:null)});
     window._lastWeatherFetch=Date.now();
     renderWeather();
   }catch(e){console.warn('weather load failed',e);}
