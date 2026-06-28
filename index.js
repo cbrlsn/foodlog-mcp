@@ -105,9 +105,16 @@ app.post('/api/insights', async (req, res) => {
   const token = auth.replace('Bearer ', '').trim();
   if (token !== ACCESS_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { user_id, timezone, from, to, debug } = req.body || {};
+  const { user_id, timezone, from, to, debug, sb_token } = req.body || {};
   if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
   const tz = timezone || 'UTC';
+
+  // The shared `sb` client uses the anon key, so RLS (auth.uid() = user_id)
+  // returns nothing from a server with no user session. Build a per-request
+  // client carrying the caller's Supabase JWT so queries run AS the user.
+  const db = sb_token
+    ? createClient(SUPABASE_URL, SUPABASE_KEY, { global: { headers: { Authorization: 'Bearer ' + sb_token } }, auth: { persistSession: false, autoRefreshToken: false } })
+    : sb;
 
   try {
     // Date list for the requested period (inclusive), bucketed in the user's
@@ -136,19 +143,19 @@ app.post('/api/insights', async (req, res) => {
     // select('*') so a single missing column can't error out a whole stream
     // (the table schemas vary slightly; we read fields defensively below).
     const [fe, fa, fmood, fweather, fsupp, fsuppLog, fsubst, fsubstLog, fweight] = await Promise.all([
-      sb.from('entries').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
-      sb.from('activities').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
-      sb.from('mood_logs').select('*').eq('user_id', user_id).gte('logged_at', sinceISO),
-      sb.from('weather_logs').select('*').eq('user_id', user_id).gte('log_date', dates[0]),
-      sb.from('supplements').select('*').eq('user_id', user_id),
-      sb.from('supplement_logs').select('*').eq('user_id', user_id).gte('taken_at', sinceISO),
-      sb.from('substances').select('*').eq('user_id', user_id),
-      sb.from('substance_logs').select('*').eq('user_id', user_id).gte('logged_at', sinceISO),
-      sb.from('weight_logs').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
+      db.from('entries').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
+      db.from('activities').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
+      db.from('mood_logs').select('*').eq('user_id', user_id).gte('logged_at', sinceISO),
+      db.from('weather_logs').select('*').eq('user_id', user_id).gte('log_date', dates[0]),
+      db.from('supplements').select('*').eq('user_id', user_id),
+      db.from('supplement_logs').select('*').eq('user_id', user_id).gte('taken_at', sinceISO),
+      db.from('substances').select('*').eq('user_id', user_id),
+      db.from('substance_logs').select('*').eq('user_id', user_id).gte('logged_at', sinceISO),
+      db.from('weight_logs').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
     ]);
 
     if (debug) {
-      const probe = await sb.from('entries').select('id,user_id,created_at').limit(3);
+      const probe = await db.from('entries').select('id,user_id,created_at').limit(3);
       const errOf = (r) => (r && r.error) ? (r.error.message || JSON.stringify(r.error)) : null;
       const nOf = (r) => (r && r.data) ? r.data.length : 0;
       return res.json({

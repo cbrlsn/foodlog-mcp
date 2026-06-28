@@ -16,6 +16,9 @@ All notable changes to **foodlog** are recorded here, newest first.
 
 > `redesign-v39` was merged (fast-forward) into `main` at v41.5; both branches continue from there.
 
+### [v42.4] — 2026-06-28
+- **Fix: weekly digest saw zero data.** The `/api/insights` backend queries returned nothing because the server's Supabase client uses the **anon key**, so RLS (`auth.uid() = user_id`) blocked every read (no server-side user session). Confirmed via a debug probe: all stream counts 0, no errors, even an unfiltered probe returned 0 rows. Fix: the frontend now sends its live Supabase session JWT (`sb_token`); the backend builds a per-request client carrying that token so queries run **as the user** and RLS passes. Also switched the queries to `select('*')` so a single unexpected column can't error out a whole stream. (Temporary `debug` probe left in the endpoint for verification; to be removed once confirmed.)
+
 ### [v42.3] — 2026-06-28
 - **Weather refresh cadence: hourly → every 15 min**, matching Open-Meteo's current-conditions update interval. The refresh timer and the on-resume staleness threshold both moved from 3600000 ms to 900000 ms. (Geolocation `maximumAge` left at 1h — that's fix freshness, not refresh rate.)
 

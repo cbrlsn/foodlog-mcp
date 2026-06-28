@@ -1309,7 +1309,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v42.3 · 2026-06-28 · weather refresh every 15 min';
+var APP_BUILD = 'v42.4 · 2026-06-28 · fix insights empty data (RLS — pass user JWT to /api/insights)';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -4026,8 +4026,10 @@ async function generateWeeklyDigest(){
   if(btn){btn.disabled=true;btn.textContent='Analysing…';}
   if(body)body.innerHTML='<div class="ins-loading"><div class="ins-skel-spin"></div><div>Analysing '+r.label+'…</div><div class="ins-loading-sub">first run can take ~40s while the server wakes up</div></div>';
   var tz='UTC';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){}
+  // The backend runs queries AS the user (RLS), so pass the live Supabase JWT.
+  var sbToken=null;try{var ss=await supabaseClient.auth.getSession();sbToken=(ss&&ss.data&&ss.data.session)?ss.data.session.access_token:null;}catch(e){}
   try{
-    var res=await fetchRetry(PROXY_URL+'/api/insights',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},body:JSON.stringify({user_id:currentUser.id,timezone:tz,from:r.from,to:r.to})});
+    var res=await fetchRetry(PROXY_URL+'/api/insights',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},body:JSON.stringify({user_id:currentUser.id,timezone:tz,from:r.from,to:r.to,sb_token:sbToken})});
     if(!res.ok){var er=await res.json().catch(function(){return{};});throw new Error((er&&er.error&&(er.error.message||er.error))||('Server error '+res.status));}
     var out=await res.json();
     var raw=out.text||'';
