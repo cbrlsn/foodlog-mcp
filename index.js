@@ -105,7 +105,7 @@ app.post('/api/insights', async (req, res) => {
   const token = auth.replace('Bearer ', '').trim();
   if (token !== ACCESS_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { user_id, timezone, from, to } = req.body || {};
+  const { user_id, timezone, from, to, debug } = req.body || {};
   if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
   const tz = timezone || 'UTC';
 
@@ -133,17 +133,33 @@ app.post('/api/insights', async (req, res) => {
     since.setUTCDate(since.getUTCDate() - 1); // pad a day for timezone edges
     const sinceISO = since.toISOString();
 
+    // select('*') so a single missing column can't error out a whole stream
+    // (the table schemas vary slightly; we read fields defensively below).
     const [fe, fa, fmood, fweather, fsupp, fsuppLog, fsubst, fsubstLog, fweight] = await Promise.all([
-      sb.from('entries').select('created_at,meal_type,description,calories,protein,carbs,fat,sugar,fibre,sodium,caffeine_mg,volume_ml,has_dairy,has_gluten,is_acidic,has_alcohol,has_nicotine,has_cannabis').eq('user_id', user_id).gte('created_at', sinceISO),
-      sb.from('activities').select('created_at,activity_type,duration_min,distance_km,intensity').eq('user_id', user_id).gte('created_at', sinceISO),
-      sb.from('mood_logs').select('logged_at,rating').eq('user_id', user_id).gte('logged_at', sinceISO),
-      sb.from('weather_logs').select('log_date,weather_code,temp_max,temp_min,temp_mean,precip_mm,sunshine_hours').eq('user_id', user_id).gte('log_date', dates[0]),
-      sb.from('supplements').select('id,name').eq('user_id', user_id),
-      sb.from('supplement_logs').select('supplement_id,taken_at').eq('user_id', user_id).gte('taken_at', sinceISO),
-      sb.from('substances').select('id,name').eq('user_id', user_id),
-      sb.from('substance_logs').select('substance_id,quantity,logged_at').eq('user_id', user_id).gte('logged_at', sinceISO),
-      sb.from('weight_logs').select('created_at,weight_kg').eq('user_id', user_id).gte('created_at', sinceISO),
+      sb.from('entries').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
+      sb.from('activities').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
+      sb.from('mood_logs').select('*').eq('user_id', user_id).gte('logged_at', sinceISO),
+      sb.from('weather_logs').select('*').eq('user_id', user_id).gte('log_date', dates[0]),
+      sb.from('supplements').select('*').eq('user_id', user_id),
+      sb.from('supplement_logs').select('*').eq('user_id', user_id).gte('taken_at', sinceISO),
+      sb.from('substances').select('*').eq('user_id', user_id),
+      sb.from('substance_logs').select('*').eq('user_id', user_id).gte('logged_at', sinceISO),
+      sb.from('weight_logs').select('*').eq('user_id', user_id).gte('created_at', sinceISO),
     ]);
+
+    if (debug) {
+      const probe = await sb.from('entries').select('id,user_id,created_at').limit(3);
+      const errOf = (r) => (r && r.error) ? (r.error.message || JSON.stringify(r.error)) : null;
+      const nOf = (r) => (r && r.data) ? r.data.length : 0;
+      return res.json({
+        received_user_id: user_id,
+        range: { from: dates[0], to: lastDate, since: sinceISO },
+        counts: { entries: nOf(fe), activities: nOf(fa), mood: nOf(fmood), weather: nOf(fweather), supplements: nOf(fsupp), supplement_logs: nOf(fsuppLog), substances: nOf(fsubst), substance_logs: nOf(fsubstLog), weight: nOf(fweight) },
+        errors: { entries: errOf(fe), activities: errOf(fa), mood: errOf(fmood), weather: errOf(fweather), supplements: errOf(fsupp), supplement_logs: errOf(fsuppLog), substances: errOf(fsubst), substance_logs: errOf(fsubstLog), weight: errOf(fweight) },
+        probe_any_entries: { count: nOf(probe), error: errOf(probe), sample_user_ids: (probe.data || []).map(r => r.user_id) },
+        entry_sample: (fe.data || []).slice(0, 1),
+      });
+    }
 
     const suppName = {}; (fsupp.data || []).forEach(s => { suppName[s.id] = s.name; });
     const substName = {}; (fsubst.data || []).forEach(s => { substName[s.id] = s.name; });
