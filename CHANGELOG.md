@@ -16,6 +16,9 @@ All notable changes to **foodlog** are recorded here, newest first.
 
 > `redesign-v39` was merged (fast-forward) into `main` at v41.5; both branches continue from there.
 
+### [v42.3] — 2026-06-28
+- **Weather refresh cadence: hourly → every 15 min**, matching Open-Meteo's current-conditions update interval. The refresh timer and the on-resume staleness threshold both moved from 3600000 ms to 900000 ms. (Geolocation `maximumAge` left at 1h — that's fix freshness, not refresh rate.)
+
 ### [v42.2] — 2026-06-28
 - **Weather strip now shows live current conditions** instead of the day's mean. The Open-Meteo call adds `current=temperature_2m,weather_code` (updates ~every 15 min); `loadWeather` always fetches fresh (cached daily row is now only an offline fallback) so the displayed temp/condition reflect *now* and refresh on the existing hourly timer + on app resume. The persisted `weather_logs` row still stores the **daily** aggregates (max/min/mean/precip/sunshine) so weekly insights correlate on day-level weather — no schema change.
 

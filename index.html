@@ -1309,7 +1309,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v42.2 · 2026-06-28 · weather strip → live current conditions (hourly)';
+var APP_BUILD = 'v42.3 · 2026-06-28 · weather refresh every 15 min';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -1572,11 +1572,13 @@ async function loadAllData() {
     renderMood();
     renderWeather();
     loadWeather();
-    // Refresh location + weather every hour while open; also when re-opened after >1h (timers pause in the background). Set up once.
+    // Refresh location + weather every 15 min while open (matches Open-Meteo's
+    // ~15-min current-conditions cadence); also when re-opened after >15 min
+    // (timers pause in the background). Set up once.
     if(!window._weatherTimer){
-      window._weatherTimer=setInterval(function(){loadWeather(true);},3600000);
+      window._weatherTimer=setInterval(function(){loadWeather(true);},900000);
       document.addEventListener('visibilitychange',function(){
-        if(!document.hidden&&Date.now()-(window._lastWeatherFetch||0)>3600000)loadWeather(true);
+        if(!document.hidden&&Date.now()-(window._lastWeatherFetch||0)>900000)loadWeather(true);
       });
     }
     renderSavedMeals();
