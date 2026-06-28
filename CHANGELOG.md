@@ -14,6 +14,14 @@ All notable changes to **foodlog** are recorded here, newest first.
 
 ## redesign-v39 branch (v39 → present)
 
+> `redesign-v39` was merged (fast-forward) into `main` at v41.5; both branches continue from there.
+
+### [v42] — 2026-06-28
+- **Weekly AI insights digest** — the core thesis feature, now server-side end-to-end.
+  - **Backend:** new `POST /api/insights` (`index.js`). Validates the `Bearer` access token, then uses the existing Supabase client (`sb`) to query the user's **last 7 days** across every stream (entries, activities, mood_logs, weather_logs, supplement_logs, substance_logs, weight_logs), buckets each into days **in the caller's timezone**, and builds a `byDay` payload mirroring the frontend `buildPayloadForDates`. Sends it to **Sonnet** (`claude-sonnet-4-6`, max_tokens 1200) with a "sharp honest analyst" correlation prompt, and returns the raw model text + the date range. No new deps or env vars (Supabase + Anthropic keys already present).
+  - **Frontend:** the Insights tab now generates a current-week digest. "Generate this week's digest" / "↻ Refresh" button; result cached in `localStorage` per ISO week (`fl-insights-{YYYY-Www}`) so it doesn't re-call on tab switches. Loading state ("Analysing your week…" + spinner), graceful error card with Retry, and a render of all five sections: headline (with eat/move/feel triad accent), 3–5 pattern cards (confidence badge + positive/negative/neutral tint), Watch ⚠ / Try → cards, data-quality footnote, and a generated-at timestamp.
+  - The previous client-side per-week insights generator (`/api/chat`-based, `generateInsightsForWeek` etc.) is left in place but no longer wired to the page.
+
 ### [v41.5] — 2026-06-27
 - **PWA auto-update.** iOS keeps home-screen PWAs suspended, so resume / pull-to-refresh reloaded *data* but never the page — new deploys never loaded and the user was always a build behind. Added `checkForUpdate()`: fetches the live `index.html` (cache-busted), compares `APP_BUILD`, and hard-reloads if it changed. Runs on `visibilitychange`, `focus`, startup, and pull-to-refresh.
 - **Service worker:** `?v=` (cache-busted) requests now bypass the cache entirely (network-only); cache bumped to `v4`.

@@ -72,6 +72,122 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// ── Weekly insights digest ────────────────────────────────────────
+// Server-side: queries the user's last 7 days across every stream, builds a
+// byDay payload (mirrors the frontend buildPayloadForDates), and runs it
+// through Sonnet for cross-stream correlations. Returns the raw model text.
+const INSIGHTS_SYSTEM = `You are a sharp, honest health analyst reviewing one week of a person's logged data. Your job is to find real patterns and correlations — not generic advice.
+The user tracks: food (kcal, macros, caffeine, alcohol, dairy, gluten), activity, mood (1–5), weather, supplements, and substances.
+Your response MUST be valid JSON with this exact structure:
+{
+"headline": "one punchy sentence summarising the week's biggest insight",
+"patterns": [
+{
+"title": "short title",
+"insight": "2–3 sentences. Be specific — name actual days, numbers, foods. Correlation must be supported by the data.",
+"confidence": "high|medium|low",
+"type": "positive|negative|neutral"
+}
+],
+"watch": "one thing to pay attention to next week, specific",
+"try": "one concrete action to try next week, specific",
+"data_quality": "note if any stream had <3 days of data — affects confidence"
+}
+Return 3–5 patterns. Prioritise mood correlations. If data is thin, say so in data_quality and lower confidence accordingly. Never invent data. Be direct — no fluff, no disclaimers beyond data_quality.`;
+
+function localDateInTz(iso, tz) {
+  try { return new Date(iso).toLocaleDateString('en-CA', { timeZone: tz }); }
+  catch (e) { return new Date(iso).toISOString().slice(0, 10); }
+}
+
+app.post('/api/insights', async (req, res) => {
+  const auth = req.headers['authorization'] || '';
+  const token = auth.replace('Bearer ', '').trim();
+  if (token !== ACCESS_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { user_id, timezone } = req.body || {};
+  if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
+  const tz = timezone || 'UTC';
+
+  try {
+    // 7 day-date strings (today back 6), bucketed in the user's timezone.
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(todayStr + 'T12:00:00Z');
+      d.setUTCDate(d.getUTCDate() - i);
+      dates.push(d.toISOString().slice(0, 10));
+    }
+    const since = new Date(dates[0] + 'T00:00:00Z');
+    since.setUTCDate(since.getUTCDate() - 1); // pad a day for timezone edges
+    const sinceISO = since.toISOString();
+
+    const [fe, fa, fmood, fweather, fsupp, fsuppLog, fsubst, fsubstLog, fweight] = await Promise.all([
+      sb.from('entries').select('created_at,meal_type,description,calories,protein,carbs,fat,sugar,fibre,sodium,caffeine_mg,volume_ml,has_dairy,has_gluten,is_acidic,has_alcohol,has_nicotine,has_cannabis').eq('user_id', user_id).gte('created_at', sinceISO),
+      sb.from('activities').select('created_at,activity_type,duration_min,distance_km,intensity').eq('user_id', user_id).gte('created_at', sinceISO),
+      sb.from('mood_logs').select('logged_at,rating').eq('user_id', user_id).gte('logged_at', sinceISO),
+      sb.from('weather_logs').select('log_date,weather_code,temp_max,temp_min,temp_mean,precip_mm,sunshine_hours').eq('user_id', user_id).gte('log_date', dates[0]),
+      sb.from('supplements').select('id,name').eq('user_id', user_id),
+      sb.from('supplement_logs').select('supplement_id,taken_at').eq('user_id', user_id).gte('taken_at', sinceISO),
+      sb.from('substances').select('id,name').eq('user_id', user_id),
+      sb.from('substance_logs').select('substance_id,quantity,logged_at').eq('user_id', user_id).gte('logged_at', sinceISO),
+      sb.from('weight_logs').select('created_at,weight_kg').eq('user_id', user_id).gte('created_at', sinceISO),
+    ]);
+
+    const suppName = {}; (fsupp.data || []).forEach(s => { suppName[s.id] = s.name; });
+    const substName = {}; (fsubst.data || []).forEach(s => { substName[s.id] = s.name; });
+    const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const hydrationMl = (e) => {
+      if (e.meal_type === 'water') return e.volume_ml || e.calories || 0;
+      if (e.meal_type === 'drink' && !e.has_alcohol) return e.volume_ml || 330;
+      return 0;
+    };
+
+    const byDay = dates.map(date => {
+      const dayEntries = (fe.data || []).filter(e => localDateInTz(e.created_at, tz) === date);
+      const food = dayEntries.filter(e => e.meal_type !== 'water');
+      const sum = (k) => Math.round(food.reduce((s, e) => s + (e[k] || 0), 0));
+      const flag = (k) => food.filter(e => e[k]).length;
+      const acts = (fa.data || []).filter(a => localDateInTz(a.created_at, tz) === date)
+        .map(a => a.activity_type + (a.duration_min ? ` ${a.duration_min}min` : '') + (a.distance_km ? ` ${a.distance_km}km` : '') + (a.intensity ? ` (${a.intensity})` : ''));
+      const moodRow = (fmood.data || []).filter(m => localDateInTz(m.logged_at, tz) === date).map(m => m.rating);
+      const wRow = (fweather.data || []).find(w => w.log_date === date);
+      const supps = (fsuppLog.data || []).filter(l => localDateInTz(l.taken_at, tz) === date).map(l => suppName[l.supplement_id] || 'supplement');
+      const substs = (fsubstLog.data || []).filter(l => localDateInTz(l.logged_at, tz) === date).map(l => (substName[l.substance_id] || 'substance') + (l.quantity > 1 ? ` x${l.quantity}` : ''));
+      const weight = (fweight.data || []).filter(w => localDateInTz(w.created_at, tz) === date).map(w => w.weight_kg)[0] || null;
+      const dow = DOW[new Date(date + 'T12:00:00Z').getUTCDay()];
+      return {
+        date, day: dow,
+        kcal: sum('calories'), protein_g: sum('protein'), carbs_g: sum('carbs'), fat_g: sum('fat'),
+        sugar_g: sum('sugar'), fibre_g: sum('fibre'), sodium_mg: sum('sodium'), caffeine_mg: sum('caffeine_mg'),
+        hydration_ml: Math.round(dayEntries.reduce((s, e) => s + hydrationMl(e), 0)),
+        flags: { dairy: flag('has_dairy'), gluten: flag('has_gluten'), acidic: flag('is_acidic'), alcohol: flag('has_alcohol'), nicotine: flag('has_nicotine'), cannabis: flag('has_cannabis') },
+        foods: food.map(e => e.description).filter(Boolean).join('; ').slice(0, 180),
+        activities: acts,
+        mood: moodRow.length ? moodRow[0] : null,
+        weather: wRow ? { temp_max: wRow.temp_max, temp_min: wRow.temp_min, precip_mm: wRow.precip_mm, sunshine_h: wRow.sunshine_hours } : null,
+        supplements: supps,
+        substances: substs,
+        weight_kg: weight,
+      };
+    });
+
+    const userMsg = `Week analysed: ${dates[0]} to ${dates[6]} (timezone ${tz}).\n\nDays (oldest first), JSON:\n${JSON.stringify(byDay)}`;
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1200, system: INSIGHTS_SYSTEM, messages: [{ role: 'user', content: userMsg }] }),
+    });
+    const data = await response.json();
+    if (!response.ok) return res.status(response.status).json({ error: data.error || ('Anthropic error ' + response.status) });
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    res.json({ text, range: { from: dates[0], to: dates[6] } });
+  } catch (err) {
+    console.error('Insights error:', err);
+    res.status(500).json({ error: 'Insights error: ' + err.message });
+  }
+});
+
 // ── MCP Server ────────────────────────────────────────────────────
 // A fresh server is built per SSE connection. The MCP SDK allows only ONE
 // transport per server instance, so a single shared server throws

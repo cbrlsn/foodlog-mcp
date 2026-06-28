@@ -542,7 +542,17 @@
   .ins-li{font-size:13px;line-height:1.6;color:var(--text2);padding:10px 16px;border-left:2px solid var(--border3);margin-bottom:8px;background:var(--bg2);border-radius:0 10px 10px 0;}
   .ins-watch .ins-li{border-left-color:var(--eat);}
   .ins-exp .ins-li{border-left-color:var(--accent);}
-  .ins-note{font-size:11px;color:var(--text3);line-height:1.6;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--font-mono);}
+  .ins-note{font-size:11px;color:var(--text3);line-height:1.6;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-family:var(--font-mono);text-align:right;}
+  /* Weekly digest additions */
+  .ins-triad{height:3px;width:52px;border-radius:3px;background:linear-gradient(90deg,var(--eat),var(--move),var(--feel));margin-bottom:14px;}
+  .ins-pattern.ins-type-positive{border-color:rgba(var(--accent-rgb),0.28);background:rgba(var(--accent-rgb),0.05);}
+  .ins-pattern.ins-type-negative{border-color:rgba(227,107,98,0.3);background:rgba(227,107,98,0.05);}
+  .ins-dq{font-size:11.5px;color:var(--text3);font-style:italic;line-height:1.55;margin-top:16px;}
+  .ins-skel-spin{width:26px;height:26px;border-radius:50%;border:2.5px solid var(--border3);border-top-color:var(--accent);animation:ptrspin .7s linear infinite;margin:0 auto 14px;}
+  .ins-loading-sub{font-size:11px;color:var(--text3);margin-top:8px;}
+  .ins-error{text-align:center;padding:40px 28px;border:1px dashed rgba(227,107,98,0.4);border-radius:var(--radius-lg);max-width:680px;margin:0 auto;background:rgba(227,107,98,0.04);}
+  .ins-error-title{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;}
+  .ins-error-sub{font-size:12.5px;color:var(--text3);line-height:1.55;}
   .ins-weeks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;}
   .ins-week-chip{background:var(--bg2);border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s var(--ease);box-shadow:var(--card-hl);user-select:none;}
   .ins-week-chip:hover{border-color:var(--border2);color:var(--text);}
@@ -1100,8 +1110,7 @@
       <div class="page-head2">
         <div><div class="page-eyebrow">Weekly analysis · by Coach</div><div class="page-title">Insights</div></div>
         <div class="ins-head-right">
-          <div id="ins-weeks" class="ins-weeks"></div>
-          <button class="ins-btn" id="ins-generate" onclick="generateSelectedWeek()">Generate</button>
+          <button class="ins-btn" id="ins-generate" onclick="generateWeeklyDigest()">Generate this week's digest</button>
         </div>
       </div>
       <div id="ins-body"></div>
@@ -1292,7 +1301,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v41.5 · 2026-06-27 · PWA auto-update + safe-area diagnostic';
+var APP_BUILD = 'v42 · 2026-06-28 · Weekly AI insights digest (server-side /api/insights + Sonnet)';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -3959,22 +3968,89 @@ function renderWeekChips(){
   });
 }
 
+// ── Weekly digest (server-side /api/insights → Sonnet correlations) ──
+// ISO week key (YYYY-Www) so each week caches separately and we don't re-call
+// Sonnet on every tab switch.
+function isoWeekKey(d){
+  d=d?new Date(d):new Date();
+  var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  var day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);
+  var ys=new Date(Date.UTC(t.getUTCFullYear(),0,1));
+  var wk=Math.ceil((((t-ys)/86400000)+1)/7);
+  return t.getUTCFullYear()+'-W'+String(wk).padStart(2,'0');
+}
+function digestCacheKey(){return 'fl-insights-'+isoWeekKey();}
+function loadDigestCache(){try{return JSON.parse(localStorage.getItem(digestCacheKey())||'null');}catch(e){return null;}}
+function saveDigestCache(p){try{localStorage.setItem(digestCacheKey(),JSON.stringify(p));}catch(e){}}
+function setDigestBtn(label){var b=document.getElementById('ins-generate');if(b){b.textContent=label;b.disabled=false;}}
+
 function renderInsights(){
   var body=document.getElementById('ins-body');if(!body)return;
-  var weeks=insAvailableWeeks();var cache=insLoadCache();
-  if(!insSelectedWeek){
-    var lastCompletedWithData=weeks.filter(function(w,i){return i>0&&w.hasData;})[0];
-    var firstCached=weeks.filter(function(w){return w.cached;})[0];
-    insSelectedWeek=(lastCompletedWithData&&lastCompletedWithData.key)||(firstCached&&firstCached.key)||weeks[0].key;
+  var cached=loadDigestCache();
+  if(cached&&cached.data){renderDigest(cached.data,cached);setDigestBtn('↻ Refresh');}
+  else{body.innerHTML='<div class="ins-empty">No digest yet for this week. Tap “Generate this week’s digest” to surface your patterns across food, activity, mood and weather.</div>';setDigestBtn("Generate this week's digest");}
+}
+
+async function generateWeeklyDigest(){
+  if(!currentUser){showToast('not signed in');return;}
+  var body=document.getElementById('ins-body');var btn=document.getElementById('ins-generate');
+  if(btn){btn.disabled=true;btn.textContent='Analysing…';}
+  if(body)body.innerHTML='<div class="ins-loading"><div class="ins-skel-spin"></div><div>Analysing your week…</div><div class="ins-loading-sub">first run can take ~40s while the server wakes up</div></div>';
+  var tz='UTC';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){}
+  try{
+    var res=await fetchRetry(PROXY_URL+'/api/insights',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},body:JSON.stringify({user_id:currentUser.id,timezone:tz})});
+    if(!res.ok){var er=await res.json().catch(function(){return{};});throw new Error((er&&er.error&&(er.error.message||er.error))||('Server error '+res.status));}
+    var out=await res.json();
+    var raw=out.text||'';
+    var a=raw.indexOf('{'),z=raw.lastIndexOf('}');
+    var cleaned=(a>-1&&z>-1)?raw.slice(a,z+1):raw.replace(/```json|```/g,'').trim();
+    var parsed=JSON.parse(cleaned);
+    var payload={generatedAt:new Date().toISOString(),range:out.range||null,data:parsed};
+    saveDigestCache(payload);
+    renderDigest(parsed,payload);
+    setDigestBtn('↻ Refresh');
+  }catch(err){
+    if(body){body.innerHTML='';var e=document.createElement('div');e.className='ins-error';
+      e.innerHTML='<div class="ins-error-title">Couldn’t generate insights</div><div class="ins-error-sub">'+escIns(err.message||'Something went wrong')+' — try again in a moment.</div>';
+      var rb=document.createElement('button');rb.className='ins-btn';rb.style.marginTop='14px';rb.textContent='Retry';rb.onclick=generateWeeklyDigest;e.appendChild(rb);
+      body.appendChild(e);}
+    setDigestBtn("Generate this week's digest");
   }
-  renderWeekChips();
-  if(cache[insSelectedWeek])renderInsightsResult(cache[insSelectedWeek]);
-  else selectWeek(insSelectedWeek);
-  if(!insAutoTried){
-    insAutoTried=true;
-    var lastWeek=weeks.filter(function(w,i){return i>0;})[0];
-    if(lastWeek&&lastWeek.hasData&&!cache[lastWeek.key]){insSelectedWeek=lastWeek.key;renderWeekChips();generateInsightsForWeek(lastWeek.key,true);}
+}
+
+function renderDigest(d,payload){
+  var body=document.getElementById('ins-body');if(!body)return;
+  d=d||{};body.innerHTML='';
+  // 1. Headline (with eat/move/feel triad accent)
+  var hero=document.createElement('div');hero.className='ins-hero';
+  hero.innerHTML='<div class="ins-triad"></div><div class="ins-hero-badge">✦ This week’s headline</div>'
+    +'<div class="ins-headline">'+escIns(d.headline||'Here is your week.')+'</div>';
+  body.appendChild(hero);
+  // 2. Pattern cards (3–5)
+  var pats=Array.isArray(d.patterns)?d.patterns:[];
+  if(pats.length){
+    var grid=document.createElement('div');grid.className='ins-pattern-grid';
+    pats.forEach(function(p){
+      var cf=(p.confidence||'low').toLowerCase();if(['low','medium','high'].indexOf(cf)<0)cf='low';
+      var ty=(p.type||'neutral').toLowerCase();if(['positive','negative','neutral'].indexOf(ty)<0)ty='neutral';
+      var card=document.createElement('div');card.className='ins-pattern ins-type-'+ty;
+      card.innerHTML='<div class="ins-pattern-head"><div class="ins-pattern-title">'+escIns(p.title||'')+'</div><span class="ins-conf '+cf+'">'+cf+'</span></div>'
+        +'<div class="ins-pattern-detail">'+escIns(p.insight||p.detail||'')+'</div>';
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
   }
+  // 3. Watch + Try (side by side)
+  var duo=document.createElement('div');duo.className='ins-duo';
+  if(d.watch){var w=document.createElement('div');w.className='ins-card ins-watch';w.innerHTML='<div class="ins-card-label">Watch ⚠</div><div class="ins-li">'+escIns(d.watch)+'</div>';duo.appendChild(w);}
+  if(d['try']){var x=document.createElement('div');x.className='ins-card ins-exp';x.innerHTML='<div class="ins-card-label">Try →</div><div class="ins-li">'+escIns(d['try'])+'</div>';duo.appendChild(x);}
+  if(duo.children.length)body.appendChild(duo);
+  // 4. Data quality footnote
+  if(d.data_quality){var dq=document.createElement('div');dq.className='ins-dq';dq.textContent=d.data_quality;body.appendChild(dq);}
+  // 5. Timestamp
+  var note=document.createElement('div');note.className='ins-note';
+  var when=(payload&&payload.generatedAt)?new Date(payload.generatedAt):new Date();
+  note.textContent='Generated '+when.toLocaleString();body.appendChild(note);
 }
 
 // ── Tab / sub-tab navigation ──────────────────────────────────────
