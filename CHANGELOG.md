@@ -16,6 +16,10 @@ All notable changes to **foodlog** are recorded here, newest first.
 
 > `redesign-v39` was merged (fast-forward) into `main` at v41.5; both branches continue from there.
 
+### [v42.1] — 2026-06-28
+- **Insights digest — period selector.** Added an intuitive segmented control to the Insights tab: **This week** (Mon→today), **Last week** (full Mon–Sun), **Last 30 days**. The active period is highlighted and periods that already have a cached digest show a small accent dot. Each period caches separately (`fl-insights-{period}-{endDate}`) so switching or returning doesn't re-call Sonnet; the hero badge + timestamp reflect the selected range.
+- **Backend:** `/api/insights` now accepts an optional `from`/`to` date range (frontend computes it per period), capped at 40 days; falls back to last-7 if absent. System prompt generalised from "one week" to "a period (up to a month)".
+
 ### [v42] — 2026-06-28
 - **Weekly AI insights digest** — the core thesis feature, now server-side end-to-end.
   - **Backend:** new `POST /api/insights` (`index.js`). Validates the `Bearer` access token, then uses the existing Supabase client (`sb`) to query the user's **last 7 days** across every stream (entries, activities, mood_logs, weather_logs, supplement_logs, substance_logs, weight_logs), buckets each into days **in the caller's timezone**, and builds a `byDay` payload mirroring the frontend `buildPayloadForDates`. Sends it to **Sonnet** (`claude-sonnet-4-6`, max_tokens 1200) with a "sharp honest analyst" correlation prompt, and returns the raw model text + the date range. No new deps or env vars (Supabase + Anthropic keys already present).

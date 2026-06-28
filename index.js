@@ -76,11 +76,11 @@ app.post('/api/chat', async (req, res) => {
 // Server-side: queries the user's last 7 days across every stream, builds a
 // byDay payload (mirrors the frontend buildPayloadForDates), and runs it
 // through Sonnet for cross-stream correlations. Returns the raw model text.
-const INSIGHTS_SYSTEM = `You are a sharp, honest health analyst reviewing one week of a person's logged data. Your job is to find real patterns and correlations — not generic advice.
+const INSIGHTS_SYSTEM = `You are a sharp, honest health analyst reviewing a period (a week, up to a month) of a person's logged data. Your job is to find real patterns and correlations — not generic advice.
 The user tracks: food (kcal, macros, caffeine, alcohol, dairy, gluten), activity, mood (1–5), weather, supplements, and substances.
 Your response MUST be valid JSON with this exact structure:
 {
-"headline": "one punchy sentence summarising the week's biggest insight",
+"headline": "one punchy sentence summarising the period's biggest insight",
 "patterns": [
 {
 "title": "short title",
@@ -105,19 +105,30 @@ app.post('/api/insights', async (req, res) => {
   const token = auth.replace('Bearer ', '').trim();
   if (token !== ACCESS_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { user_id, timezone } = req.body || {};
+  const { user_id, timezone, from, to } = req.body || {};
   if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
   const tz = timezone || 'UTC';
 
   try {
-    // 7 day-date strings (today back 6), bucketed in the user's timezone.
-    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    // Date list for the requested period (inclusive), bucketed in the user's
+    // timezone. Frontend sends from/to per the chosen period; default = last 7
+    // days. Capped at 40 days to bound the prompt size.
     const dates = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(todayStr + 'T12:00:00Z');
-      d.setUTCDate(d.getUTCDate() - i);
-      dates.push(d.toISOString().slice(0, 10));
+    const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+    if (isDate(from) && isDate(to)) {
+      let d = new Date(from + 'T12:00:00Z');
+      const end = new Date(to + 'T12:00:00Z');
+      while (d <= end && dates.length < 40) { dates.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); }
     }
+    if (!dates.length) {
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(todayStr + 'T12:00:00Z');
+        d.setUTCDate(d.getUTCDate() - i);
+        dates.push(d.toISOString().slice(0, 10));
+      }
+    }
+    const lastDate = dates[dates.length - 1];
     const since = new Date(dates[0] + 'T00:00:00Z');
     since.setUTCDate(since.getUTCDate() - 1); // pad a day for timezone edges
     const sinceISO = since.toISOString();
@@ -172,7 +183,7 @@ app.post('/api/insights', async (req, res) => {
       };
     });
 
-    const userMsg = `Week analysed: ${dates[0]} to ${dates[6]} (timezone ${tz}).\n\nDays (oldest first), JSON:\n${JSON.stringify(byDay)}`;
+    const userMsg = `Period analysed: ${dates[0]} to ${lastDate} (${dates.length} days, timezone ${tz}).\n\nDays (oldest first), JSON:\n${JSON.stringify(byDay)}`;
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
@@ -181,7 +192,7 @@ app.post('/api/insights', async (req, res) => {
     const data = await response.json();
     if (!response.ok) return res.status(response.status).json({ error: data.error || ('Anthropic error ' + response.status) });
     const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    res.json({ text, range: { from: dates[0], to: dates[6] } });
+    res.json({ text, range: { from: dates[0], to: lastDate, days: dates.length } });
   } catch (err) {
     console.error('Insights error:', err);
     res.status(500).json({ error: 'Insights error: ' + err.message });
