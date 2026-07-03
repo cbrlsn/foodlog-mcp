@@ -456,6 +456,26 @@
   .supp-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:4px 6px;border-radius:5px;opacity:0;transition:all .12s;}
   .supp-row:hover .supp-del{opacity:1;}
   .supp-del:hover{color:var(--red);background:rgba(227,107,98,0.12);}
+  /* Supplement inline edit (definition: name/dose/unit) */
+  .supp-edit-pencil{background:none;border:none;color:var(--text3);cursor:pointer;padding:5px 6px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s;}
+  .supp-edit-pencil:hover{color:var(--text);background:var(--bg3);}
+  .supp-edit-pencil svg{width:14px;height:14px;}
+  .supp-row-edit{cursor:default;flex-wrap:wrap;gap:10px;}
+  .supp-edit-fields{display:flex;gap:8px;flex:1;min-width:0;align-items:center;}
+  .supp-edit-name{flex:1;min-width:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:8px 11px;font-size:13px;color:var(--text);font-family:'Geist',-apple-system,sans-serif;outline:none;transition:border-color .15s;}
+  .supp-edit-dose{width:62px;flex-shrink:0;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--text);font-family:'Geist',-apple-system,sans-serif;outline:none;transition:border-color .15s;}
+  .supp-edit-name:focus,.supp-edit-dose:focus{border-color:rgba(var(--accent-rgb),0.45);}
+  .supp-edit-unit{flex-shrink:0;font-size:12px;padding:8px 26px 8px 10px;}
+  .supp-edit-actions{display:flex;gap:8px;flex-shrink:0;align-items:center;}
+  .supp-edit-save{background:var(--accent);color:var(--on-accent);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Geist',-apple-system,sans-serif;transition:background .15s;}
+  .supp-edit-save:hover{background:var(--accent2);}
+  .supp-edit-save:disabled{opacity:.6;cursor:default;}
+  .supp-edit-cancel{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:'Geist',-apple-system,sans-serif;transition:all .15s;}
+  .supp-edit-cancel:hover{color:var(--text);border-color:var(--border3);}
+  .supp-edit-err{flex-basis:100%;font-size:11px;color:var(--red);}
+  .supp-edit-err:empty{display:none;}
+  @keyframes suppShake{10%,90%{transform:translateX(-1px);}20%,80%{transform:translateX(2px);}30%,50%,70%{transform:translateX(-4px);}40%,60%{transform:translateX(4px);}}
+  .supp-row-edit.shake{animation:suppShake .4s;}
   .supp-add-form{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:10px;display:none;animation:pagein .2s var(--ease);}
   .supp-add-form.open{display:block;}
   .supp-add-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
@@ -1309,7 +1329,7 @@
 })();
 
 // ── Config ────────────────────────────────────────────────────────
-var APP_BUILD = 'v42.4 · 2026-06-28 · fix insights empty data (RLS — pass user JWT to /api/insights)';
+var APP_BUILD = 'v43 · 2026-07-03 · chat log truncation fix + supplement inline edit';
 var PROXY_URL = 'https://foodlog-mcp.onrender.com'; // update after Render deploy
 // Render free tier sleeps when idle; the first request can fail or 502 while it boots.
 // Retry transparently with backoff so a cold start degrades to a short wait, not "Failed to fetch".
@@ -2207,7 +2227,7 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
     var res=await fetchRetry(PROXY_URL+'/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+ACCESS_TOKEN},
-      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:2000,system:systemPrompt,messages:chatHistory.slice(-12).concat([{role:'user',content:text}])})
+      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:8000,system:systemPrompt,messages:chatHistory.slice(-12).concat([{role:'user',content:text}])})
     });
     if(!res.ok){var e=await res.json();throw new Error(typeof e.error==='object'?JSON.stringify(e.error):(e.error||'Proxy error '+res.status));}
     var data=await res.json();
@@ -2221,8 +2241,17 @@ Only populate arrays for what was actually mentioned. Empty arrays [] for the re
     try {
       parsed=JSON.parse(cleaned);
     } catch(e) {
-      // Claude replied in plain text (e.g. answering a question) — show it directly
-      parsed={entries:[],activities:[],health_events:[],reply:raw,suggestion:null};
+      if(jsonStart>-1){
+        // The model attempted JSON but it came back malformed/truncated (e.g.
+        // a big multi-day batch hit the token cap). NEVER dump the raw JSON
+        // into the chat, and don't half-log — surface a clear, recoverable
+        // message so the user can retry rather than losing data silently.
+        console.error('chat JSON parse failed (likely truncated):',e,raw.slice(-200));
+        parsed={entries:[],activities:[],health_events:[],reply:"I couldn't process that one cleanly — it may have been a lot at once. Try again, or split it into two shorter messages and I'll log each.",suggestion:null};
+      } else {
+        // Genuine plain-text answer (no JSON at all, e.g. a question) — show it.
+        parsed={entries:[],activities:[],health_events:[],reply:raw,suggestion:null};
+      }
     }
 
     setSyncStatus('syncing','saving...');
@@ -3490,6 +3519,46 @@ async function deleteSupplement(id){
   renderSupplements();
 }
 
+// ── Inline edit of a supplement DEFINITION (name/dose/unit) ───────
+// Definition-only: never touches supplement_logs, so streak history is kept.
+var editingSuppId=null;
+function suppUnitOptions(cur){
+  var units=['pills','g','mg','mcg','ml','IU'];
+  if(cur&&units.indexOf(cur)<0)units.unshift(cur);
+  return units.map(function(u){return '<option value="'+escAttr(u)+'"'+(u===cur?' selected':'')+'>'+escAttr(u)+'</option>';}).join('');
+}
+function _suppEditOutside(ev){var row=document.getElementById('supp-edit-row');if(row&&!row.contains(ev.target))_endSuppEdit();}
+function _suppEditKey(ev){if(ev.key==='Escape'){ev.preventDefault();_endSuppEdit();}}
+function _endSuppEdit(){editingSuppId=null;document.removeEventListener('click',_suppEditOutside,false);document.removeEventListener('keydown',_suppEditKey,false);renderSupplements();}
+function startSuppEdit(id,e){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  editingSuppId=id;renderSupplements();
+  document.removeEventListener('click',_suppEditOutside,false);
+  document.removeEventListener('keydown',_suppEditKey,false);
+  setTimeout(function(){
+    var inp=document.querySelector('#supp-edit-row .supp-edit-name');if(inp){try{inp.focus();inp.select();}catch(_){}}
+    document.addEventListener('click',_suppEditOutside,false);
+    document.addEventListener('keydown',_suppEditKey,false);
+  },0);
+}
+function cancelSuppEdit(e){if(e&&e.stopPropagation)e.stopPropagation();_endSuppEdit();}
+async function saveSuppEdit(id,e){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  var row=document.getElementById('supp-edit-row');if(!row)return;
+  var name=(row.querySelector('.supp-edit-name').value||'').trim();
+  var dose=parseFloat(row.querySelector('.supp-edit-dose').value);
+  var unit=row.querySelector('.supp-edit-unit').value;
+  var errEl=row.querySelector('.supp-edit-err');
+  if(!name||!(dose>0)){ if(errEl)errEl.textContent=''; row.classList.remove('shake');void row.offsetWidth;row.classList.add('shake'); return; }
+  var st=suppTypes.find(function(s){return s.id===id;});if(!st){_endSuppEdit();return;}
+  var saveBtn=row.querySelector('.supp-edit-save');if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Saving…';}
+  if(errEl)errEl.textContent='';
+  var resp=await supabaseClient.from('supplements').update({name:name,default_dose:dose,unit:unit}).eq('id',id).eq('user_id',currentUser.id);
+  if(resp&&resp.error){ if(errEl)errEl.textContent='Couldn’t save — try again'; if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Save';} return; }
+  st.name=name;st.default_dose=dose;st.unit=unit; // update in-memory; no re-fetch
+  _endSuppEdit();
+}
+
 async function toggleSuppTaken(suppId,dose){
   var today=todayStr();
   var existing=suppLogs.find(function(l){return l.supplement_id===suppId&&l.date===today;});
@@ -3533,10 +3602,27 @@ function renderSupplements(){
   }
   var html='';
   suppTypes.forEach(function(st,idx){
+    var color=st.color||suppColor(idx);
+    // Inline edit mode for this supplement's DEFINITION (name/dose/unit)
+    if(editingSuppId===st.id){
+      html+='<div class="supp-row supp-row-edit" id="supp-edit-row">'
+        +'<div class="supp-dot" style="background:'+color+'"></div>'
+        +'<div class="supp-edit-fields">'
+          +'<input class="supp-edit-name" value="'+escAttr(st.name)+'" placeholder="name" maxlength="40" />'
+          +'<input class="supp-edit-dose" type="number" step="0.5" min="0" value="'+(st.default_dose!=null?st.default_dose:'')+'" placeholder="dose" />'
+          +'<select class="supp-edit-unit select-input">'+suppUnitOptions(st.unit)+'</select>'
+        +'</div>'
+        +'<div class="supp-edit-actions">'
+          +'<button class="supp-edit-save" onclick="saveSuppEdit(\''+st.id+'\',event)">Save</button>'
+          +'<button class="supp-edit-cancel" onclick="cancelSuppEdit(event)">Cancel</button>'
+        +'</div>'
+        +'<div class="supp-edit-err"></div>'
+        +'</div>';
+      return;
+    }
     var log=suppLogs.find(function(l){return l.supplement_id===st.id&&l.date===today;});
     var taken=!!log;
     var dose=log?log.dose:st.default_dose;
-    var color=st.color||suppColor(idx);
     html+='<div class="supp-row'+(taken?' taken':'')+'" onclick="toggleSuppTaken(\''+st.id+'\','+st.default_dose+')">'
       +'<div class="supp-check">'+(taken?'✓':'')+'</div>'
       +'<div class="supp-dot" style="background:'+color+'"></div>'
@@ -3546,6 +3632,7 @@ function renderSupplements(){
       +'<button class="supp-dose-btn" onclick="adjustSuppDose(\''+st.id+'\',-1,event)">−</button>'
       +'<span class="supp-dose-val">'+dose+'</span>'
       +'<button class="supp-dose-btn" onclick="adjustSuppDose(\''+st.id+'\',1,event)">+</button></div>'
+      +'<button class="supp-edit-pencil" onclick="startSuppEdit(\''+st.id+'\',event)" aria-label="Edit '+escAttr(st.name)+'" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'
       +'<button class="supp-del" onclick="event.stopPropagation();deleteSupplement(\''+st.id+'\')">✕</button>'
       +'</div>';
   });
